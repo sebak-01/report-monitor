@@ -1,0 +1,203 @@
+# report-monitor
+
+*(working title; the dashboard UI itself is titled "Kennzahlen-Dashboard")*
+
+A local-first, browser-only dashboard for the key figures of companies, starting with state-owned
+enterprises such as research institutes. The UI is in German; code and documentation are in English.
+
+**Pilot:** annual accounts of a state-owned research institute, published as PDFs on a government open data
+portal. The pilot dataset is **not part of this repository** (see "Data in this repository" below). Without it
+the app starts with a small dataset of invented figures and lets you load your own files.
+
+## Data in this repository
+
+- `public/data/demo.json` – invented figures ("Beispiel GmbH"), always bundled. It is shown when nothing else is
+  available and is used by the tests.
+- `public/data/fgk.json` – the private pilot dataset (Bilanz/GuV/Anhang 2018–2024), kept out of the repository
+  through `.gitignore`. If the file exists, the app shows it instead of the demo data, including the dedicated
+  Bilanz and GuV views described below. Without it those two views are simply not offered; the tests that need
+  it are skipped.
+- The pilot tooling (`tools/build_dataset.py`, `tools/extract_statements.py`, `tools/base/`) is ignored as well.
+- Other companies: use "Daten hochladen" (CSV, XLSX or JSON in the dataset format), or drop a dataset into
+  `public/data/` and add its file name to `DATASET_URLS` in `src/App.tsx`.
+
+## Status
+
+Phase 1 (display) and the upload frame. With the pilot dataset, two dropdowns in the upper right select the view and the fiscal year (2019–2024; 2018 appears
+as the comparison year of the 2019 report). Both are kept in the URL (`#/balance/2021`, `#/income/2024`).
+Each view has a multi-year trend chart with a table twin.
+
+Companies that changed their name can store earlier names in `entity.formerNames`; the dashboard always shows
+the current one. Lines that only exist in some years' layouts (e.g. Verlustvortrag from 2021) are handled with
+`absentIn` / `layouts` per fact.
+
+- **Bilanz** (Anlage 1 and Anhang III "Angaben zur Bilanz")
+  - KPI cards: Bilanzsumme, Anlagevermögen, Eigenkapitalquote, liquide Mittel
+  - structure of Aktiva and Passiva for both years (stacked bars)
+  - the complete Aktiva and Passiva as tables with position numbers, both years and the change; rows with
+    sub-items can be collapsed
+  - Anhang III: Kapitalrücklage and Sonderposten (roll-forwards), sonstige Rückstellungen, Verbindlichkeitenspiegel,
+    remarks
+- **Gewinn- und Verlustrechnung** (Anlage 2 and Anhang IV "Erläuterungen zur GuV")
+  - KPI cards: Umsatzerlöse, Jahresfehlbetrag, Personalaufwand, Personalaufwand im Verhältnis zum Umsatz
+  - comparison chart of the main income statement items
+  - the complete income statement as a table
+  - Anhang IV directly below it: Umsatzerlöse by activity (chart and table), domestic/foreign split, items from
+    other fiscal years
+- each view shows the plausibility checks that belong to it
+- light and dark mode (follows the OS setting, or set `data-theme="light|dark"` on `<html>`)
+
+### Upload frame (CSV, XLSX, JSON)
+
+"Daten hochladen" (`#/upload`) loads your own figures. Everything happens in the browser; the file is never sent
+anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" dropdown appears once something is loaded).
+
+1. Drop or choose a `.csv` (`;` `,` tab or `|`; UTF-8 or Windows-1252), `.xlsx` (every sheet is offered) or `.json`.
+2. A **JSON file in the dataset format** (schema 0.3, or the older 0.2 with a single `source`) is recognized, validated
+   with its own checks and imported as is. Other JSON (a list of rows, or `{ "Umsatz": { "2023": 1 } }`) is treated
+   like a table.
+3. For a **table** the app guesses the header row, the label column and the year columns (headers such as `2023`,
+   `GJ 2023`) and shows the file excerpt; each guess can be corrected (wide layout: one row per item, one column
+   per year; long layout: item / year / value). Unit and number notation (`1.234,56` or `1,234.56`, auto-detected) are
+   selectable. Warnings name what was skipped or overwritten; errors block the import.
+4. The result is shown as a generic **Daten** view: first figures with year-on-year change, a chart of up to four
+   chosen items with a table twin, and the complete table. Uploaded tables have no reconciliation checks.
+
+Limits: 15 MB, 50,000 rows, years only (no quarters), one unit per upload, no `.xls`. The old `.xls` format and PDF
+files are rejected with a message.
+
+Not built yet: PDF upload/extraction, analytics, other companies. Anhang I/II (accounting
+methods), Anhang V (management, supervisory board) and the Corporate Governance Bericht are not part of the pilot.
+
+## Quick start
+
+Requires Node.js 20 or newer.
+
+```bash
+npm install
+npm run dev        # development server
+npm test           # unit tests (Vitest)
+npm run typecheck  # TypeScript
+npm run build      # type check + production build into dist/
+npm run preview    # serve the production build locally
+```
+
+The production build is a static site (relative base path) and can be hosted anywhere.
+
+## Privacy
+
+Everything runs in the browser. There is no backend, and no data leaves the machine. The dataset is a
+static file served next to the app. The planned upload feature will read files locally in the browser
+and keep them in browser storage only.
+
+## Project structure
+
+```
+public/data/demo.json         invented demo dataset (schema 0.3), bundled
+public/data/fgk.json          the private pilot dataset, 2018-2024 (git-ignored)
+tools/extract_statements.py   extracts Bilanz/GuV figures from the *_extracted.json text layers (git-ignored)
+tools/build_dataset.py        builds public/data/fgk.json from extracts + hand-entered Anhang data (git-ignored)
+src/types.ts                  dataset format
+src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
+src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
+src/lib/validate.ts           runs all reconciliation checks; splits the report by view
+src/lib/dataset.ts            runtime shape check, value lookup, period helpers
+src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
+src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
+src/lib/grouped.ts            models for the grouped and the stacked bar charts
+src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json), mapping.ts (table -> dataset),
+                              storage.ts (IndexedDB), renderable.ts (generic view fallback)
+src/lib/genericView.ts        cards and chart model of the generic "Daten" view
+src/lib/format.ts             German number formatting (Intl)
+src/i18n/de.ts                all user-visible strings that are not part of the data
+src/components/               ViewSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
+                              UploadPage, MappingForm, SourceSelect, GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
+src/views/                    BalanceView, IncomeView, DataView (what each dropdown entry shows)
+```
+
+## Dataset format
+
+A dataset (schema version 0.3) is one JSON file:
+
+- `entity`, `sources`: who the figures belong to (incl. `formerNames`) and the report each year comes from
+- `periods`: fiscal years, e.g. `{ "id": "2024", "start": "2024-01-01", "end": "2024-12-31" }`
+- `statements` and `views`: the statements (Aktiva, Passiva, GuV) and the selectable views that group them.
+  The dropdown is built from `views`; a view id needs a matching component in `src/App.tsx`.
+- `facts`: one entry per reported figure, with a value for every period:
+
+  ```json
+  { "key": "revenue", "statement": "income", "labelDe": "Umsatzerlöse", "numberLabel": "1.", "unit": "EUR",
+    "values": { "2024": 2074189.84, "2023": 1766053.0 } }
+  ```
+
+  - `parentKey` expresses the hierarchy of the statement, `absentIn` lists years whose layout has no such line, `layouts` overrides label/number/sign per year.
+  - `numberLabel` is the position number as printed ("A.", "II.", "1.", "a)").
+  - `emphasis` (`total`, `subtotal`, `memo`) controls how a row is drawn; `memo` rows are "davon ..." lines.
+  - `printSign: -1` marks lines whose printed sign differs from the stored economic sign (see below).
+  - A value of `null` means "not printed or redacted in the source" and is never treated as zero.
+- `derivedKpis`: formulas over fact keys, e.g. `equity_total / total_assets`. `revenue[prev]` is the value of the
+  previous period.
+- `checks`: reconciliation rules `lhs = rhs`, each assigned to the `views` in which it is shown, e.g.
+  `fixed_assets_total + current_assets_total + prepaid_expenses` = `total_assets`
+- `notes`: remarks from the Anhang that are shown as text, per view
+- `redactions`: things the source blacks out or omits (`kind`: `redacted` | `missing`; optional `periods`), shown as a notice in their view instead of being left out
+
+Units: `EUR`, `TEUR` (thousand euros), `count`, `pct` (88.9 means 88.9 %) and `ratio` (0.269 means 26.9 %).
+
+Sign conventions: balance sheet items and income statement lines are stored as printed (expenses as positive
+cost amounts). Results (`net_result`) use the economic sign, so a loss is negative. Two income statement lines are
+printed with the opposite sign ("Verminderung des Bestandes" and the "Jahresfehlbetrag" as a positive loss) and carry
+`printSign: -1`: the tables show them as printed, the checks and KPIs use the economic value. A relative change is
+not shown when the sign flips between the years.
+
+## Validation
+
+Datasets will later come from uploaded files, so their formulas are untrusted input. They are parsed
+into an AST by a small hand-written parser (numbers, identifiers, `+ - * /`, parentheses, `[prev]`) and
+never run through `eval` or `new Function`.
+
+Each check is evaluated for every period within the tolerance given in `conventions.tolerance`
+(default 0.01 EUR). The result is one of:
+
+- **pass**: both sides agree
+- **fail**: the sides differ, a key is unknown, or the formula is invalid
+- **skipped**: an input value is missing (`null`) or there is no previous period
+
+## Roadmap
+
+1. **Display** (this version): Bilanz and GuV views for 2019-2024 with the complete statements, Anhang III/IV, trends, validation.
+2. **Upload frame** (done for CSV, XLSX, JSON): drag and drop, column mapping, preview, stored in the browser only.
+3. **PDF extraction**: coordinate-based table reconstruction (pdf.js), OCR for scanned pages, and a review
+   screen where every recognized value is confirmed against the page image.
+4. **Analytics**: statistical charts and cross-year / cross-company comparisons, probably with DuckDB-WASM.
+5. **Other companies and open data**: discover reports through the metadata of the open data portal
+   (DCAT-AP.de), then generalize extraction to arbitrary report layouts.
+
+## Data source and license
+
+Source of the pilot data (not distributed with this repository): the annual accounts 2019-2024 (balance sheet,
+income statement, notes) of the pilot company, published as PDFs on a government open data portal under the
+*Datenlizenz Deutschland - Namensnennung - Version 2.0*. The license requires attribution (source, license,
+link, and a note on changes). Add the full attribution to the footer before the dashboard is published.
+
+The figures were transcribed by hand from the PDF; they are not independently verified. The reconciliation
+checks catch typing errors in sums, not wrong values that happen to be consistent.
+
+## Known limitations
+
+- The JavaScript bundle is about 750 kB (250 kB gzipped), mostly ECharts. Fine for now; code splitting
+  comes with the analytics phase.
+- Which items go into which chart and which KPIs are shown per view is configured in code
+  (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for the pilot, not yet in the dataset.
+- The Anlagenspiegel and the auditor fee are redacted in the published PDF; both are not shown in the dashboard.
+- The Aktiva and Passiva tables are stacked, not side by side as in the PDF, so that they also work on a phone.
+- The aqua and yellow chart colors have low contrast on the light surface. Every chart therefore has a legend,
+  tooltips and a table view with the same numbers.
+
+## Data quality
+
+The figures of 2019-2022 were read from the PDF text layers (OCR where scanned) and partly entered by hand; they
+are cross-checked by the reconciliation checks and by comparing prior-year columns of consecutive reports, but not
+independently verified. Known gaps: the Anlagenspiegel page is missing from the 2019-2022 PDFs and redacted in 2024;
+the 2020 report states a 100 % domestic revenue share while the 2021 report gives 91 / 9 % for 2020 (own-report value
+kept, noted in the dataset); headcount for 2018/2019 is unknown.

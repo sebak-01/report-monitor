@@ -1,0 +1,14 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# Private pilot data and tooling (annual accounts of a state-owned research institute)
+# – not part of the public repository
+public/data/fgk.json
+public/data/fgk-2024.json
+tools/base/
+tools/build_dataset.py
+tools/extract_statements.py
+tools/__pycache__/
+*_extracted.json
