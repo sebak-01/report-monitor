@@ -84,11 +84,22 @@ npm run preview    # serve the production build locally
 
 The production build is a static site (relative base path) and can be hosted anywhere.
 
+## Hosting (GitHub Pages)
+
+1. Repo → Settings → Pages → Build and deployment → Source: **GitHub Actions** (one-time setting).
+2. Push to `main` – `.github/workflows/deploy.yml` runs the tests, builds `dist/` and publishes it to
+   GitHub Pages. The deployment URL shows at the end of the workflow run.
+
+The hosted site shows the bundled demo dataset. The pilot dataset is git-ignored and never reaches the
+published build. To work with your own figures on the hosted site, load them through "Daten hochladen"
+in the browser – they stay in that browser's storage.
+
 ## Privacy
 
 Everything runs in the browser. There is no backend, and no data leaves the machine. The dataset is a
-static file served next to the app. The planned upload feature will read files locally in the browser
-and keep them in browser storage only.
+static file served next to the app. Uploaded files are read locally and kept in the browser's IndexedDB
+only (plus `localStorage` for the active source). That storage is per browser and per device: clearing
+the site data or switching browsers or devices means uploading the files again.
 
 ## Project structure
 
