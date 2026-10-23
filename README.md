@@ -9,18 +9,6 @@ enterprises such as research institutes. The UI is in German; code and documenta
 portal. The pilot dataset is **not part of this repository** (see "Data in this repository" below). Without it
 the app starts with a small dataset of invented figures and lets you load your own files.
 
-## Data in this repository
-
-- `public/data/demo.json` – invented figures ("Beispiel GmbH"), always bundled. It is shown when nothing else is
-  available and is used by the tests.
-- `public/data/fgk.json` – the private pilot dataset (Bilanz/GuV/Anhang 2018–2024), kept out of the repository
-  through `.gitignore`. If the file exists, the app shows it instead of the demo data, including the dedicated
-  Bilanz and GuV views described below. Without it those two views are simply not offered; the tests that need
-  it are skipped.
-- The pilot tooling (`tools/build_dataset.py`, `tools/extract_statements.py`, `tools/base/`) is ignored as well.
-- Other companies: use "Daten hochladen" (CSV, XLSX or JSON in the dataset format), or drop a dataset into
-  `public/data/` and add its file name to `DATASET_URLS` in `src/App.tsx`.
-
 ## Status
 
 Phase 1 (display) and the upload frame. With the pilot dataset, two dropdowns in the upper right select the view and the fiscal year (2019–2024; 2018 appears
@@ -105,9 +93,6 @@ the site data or switching browsers or devices means uploading the files again.
 
 ```
 public/data/demo.json         invented demo dataset (schema 0.3), bundled
-public/data/fgk.json          the private pilot dataset, 2018-2024 (git-ignored)
-tools/extract_statements.py   extracts Bilanz/GuV figures from the *_extracted.json text layers (git-ignored)
-tools/build_dataset.py        builds public/data/fgk.json from extracts + hand-entered Anhang data (git-ignored)
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
