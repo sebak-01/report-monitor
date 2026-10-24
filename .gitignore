@@ -12,3 +12,4 @@ tools/build_dataset.py
 tools/extract_statements.py
 tools/__pycache__/
 *_extracted.json
+private-data/
