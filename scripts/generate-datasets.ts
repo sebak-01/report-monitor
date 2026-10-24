@@ -24,8 +24,8 @@ const { validateDataset } = await import('../src/lib/validate.ts');
 const [, , sourceDir = 'private-data', outDir = 'data'] = process.argv;
 
 const OUT_NAME: Record<string, string> = {
-  // The curated pilot dataset fgk.json stays untouched; the auto-extract gets
-  // its own name for comparison.
+  // The curated pilot dataset fgk.json is the one to load; the auto-extract is
+  // written under its own name so it never overwrites it.
   FGK: 'fgk-auto',
   ifos: 'ifos',
   TIME: 'time',
