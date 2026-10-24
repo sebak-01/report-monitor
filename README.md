@@ -5,9 +5,9 @@
 A local-first, browser-only dashboard for the key figures of companies, starting with state-owned
 enterprises such as research institutes. The UI is in German; code and documentation are in English.
 
-**Pilot:** annual accounts of a state-owned research institute, published as PDFs on a government open data
-portal. The pilot dataset is **not part of this repository** (see "Data in this repository" below). Without it
-the app starts with a small dataset of invented figures and lets you load your own files.
+**Pilot:** annual accounts of state-owned research institutes, published as PDFs on a government open data
+portal. **No data is part of this repository** – without an uploaded dataset the dashboard shows the full
+statement structure with every figure as "–", and you load your own files through "Daten hochladen".
 
 ## Status
 
@@ -82,8 +82,8 @@ npm run typecheck  # TypeScript
 npm run build      # type check + production build into dist/
 npm run preview    # serve the production build locally
 
-# rebuild public/data/{ifos,time,fgk-auto}.json from the report extracts
-# (needs the *_extracted.json files in private-data/ and Node.js 22+)
+# build data/*.json from the report extracts in private-data/ (Node.js 22+);
+# the files are git-ignored and loaded per upload in the dashboard
 npm run generate:datasets
 ```
 
@@ -95,26 +95,27 @@ The production build is a static site (relative base path) and can be hosted any
 2. Push to `main` – `.github/workflows/deploy.yml` runs the tests, builds `dist/` and publishes it to
    GitHub Pages. The deployment URL shows at the end of the workflow run.
 
-The hosted site shows the bundled demo dataset. The pilot dataset is git-ignored and never reaches the
-published build. To work with your own figures on the hosted site, load them through "Daten hochladen"
-in the browser – they stay in that browser's storage.
+The hosted site contains no data at all: it starts with the empty structure (all boxes, every figure "–").
+Datasets are git-ignored and never reach the published build. To work with your own figures on the hosted site,
+load them through "Daten hochladen" in the browser – they stay in that browser's storage.
 
 ## Privacy
 
-Everything runs in the browser. There is no backend, and no data leaves the machine. The dataset is a
-static file served next to the app. Uploaded files are read locally and kept in the browser's IndexedDB
+Everything runs in the browser. There is no backend, and no data leaves the machine. Uploaded files are read
+locally and kept in the browser's IndexedDB
 only (plus `localStorage` for the active source). That storage is per browser and per device: clearing
 the site data or switching browsers or devices means uploading the files again.
 
 ## Project structure
 
 ```
-public/data/demo.json         invented demo dataset (schema 0.4), bundled
+data/                        datasets you generated (git-ignored) – load them per upload
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
 src/lib/validate.ts           runs all reconciliation checks; splits the report by view; roll-forward checks of schedules
 src/lib/dataset.ts            runtime shape check, value lookup, period helpers
+src/lib/emptyDataset.ts       the dashboard with no data loaded: statement structure, every figure null
 src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
 src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
 src/lib/grouped.ts            models for the grouped and the stacked bar charts
@@ -126,7 +127,7 @@ src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
 src/i18n/de.ts                all user-visible strings that are not part of the data
-scripts/generate-datasets.ts  builds public/data/*.json from the report extracts in private-data/
+scripts/generate-datasets.ts  builds data/*.json from the report extracts in private-data/
 src/components/               ViewSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
                               UploadPage, MappingForm, SourceSelect, ErrorBoundary,
                               GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
@@ -198,13 +199,14 @@ Each check is evaluated for every period within the tolerance given in `conventi
 
 ## Data source and license
 
-Source of the pilot data (not distributed with this repository): the annual accounts 2019-2024 (balance sheet,
-income statement, notes) of the pilot company, published as PDFs on a government open data portal under the
-*Datenlizenz Deutschland - Namensnennung - Version 2.0*. The license requires attribution (source, license,
-link, and a note on changes). Add the full attribution to the footer before the dashboard is published.
+No data is distributed with this repository. The pilot sources are the annual accounts (balance sheet, income
+statement, notes) of three state-owned research institutes, published as PDFs on a government open data portal
+under the *Datenlizenz Deutschland - Namensnennung - Version 2.0*. The license requires attribution (source,
+license, link, and a note on changes) – add the full attribution to the footer before a dashboard with real
+figures is published.
 
-The figures were transcribed by hand from the PDF; they are not independently verified. The reconciliation
-checks catch typing errors in sums, not wrong values that happen to be consistent.
+Figures are read from the PDF text layers (OCR where scanned) and are not independently verified. The
+reconciliation checks catch typing errors in sums, not wrong values that happen to be consistent.
 
 ## Known limitations
 

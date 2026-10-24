@@ -25,6 +25,8 @@ function cellText(result: CheckResult | undefined): string {
 
 export function ValidationPanel({ report, periods, tolerance }: Props) {
   const total = report.results.length;
+  // Datasets without checks (e.g. the empty start view) show no panel.
+  if (total === 0) return null;
 
   // Group results by check, keeping the order of the dataset.
   const byCheck = new Map<string, { label: string; byPeriod: Map<string, CheckResult> }>();

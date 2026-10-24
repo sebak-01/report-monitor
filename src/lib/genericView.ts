@@ -12,13 +12,13 @@ export function factsOfView(dataset: Dataset, statements: string[]): Fact[] {
 /** Headline cards for the first facts of an uploaded table: value in the selected year and change to the year before. */
 export function buildGenericCards(facts: Fact[], dataset: Dataset, periodId: string, limit = 4): KpiCardModel[] {
   const previousId = previousPeriodId(dataset, periodId);
-  return facts
-    .filter((f) => f.values[periodId] !== null && f.values[periodId] !== undefined)
-    .slice(0, limit)
-    .map((fact) => {
-      const current = fact.values[periodId] as number;
+  const valued = facts.filter((f) => f.values[periodId] !== null && f.values[periodId] !== undefined);
+  // The empty start view: the boxes show, but every figure reads "–".
+  const chosen = (valued.length > 0 ? valued : facts).slice(0, limit);
+  return chosen.map((fact) => {
+      const current = fact.values[periodId] ?? null;
       const previous = previousId === null ? null : (fact.values[previousId] ?? null);
-      const change = relativeChange(current, previous);
+      const change = current === null ? null : relativeChange(current, previous);
       return {
         id: fact.key,
         label: fact.labelDe,

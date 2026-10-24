@@ -1,25 +1,33 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { parseDataset } from './dataset';
+import { emptyDataset } from './emptyDataset';
+import type { Dataset } from '../types';
 import { reportForView, validateDataset } from './validate';
 import { IncomeView } from '../views/IncomeView';
 import { BalanceView } from '../views/BalanceView';
 import { AnlagespiegelView } from '../views/AnlagespiegelView';
 import { ChartControls } from '../components/ChartControls';
 
-const DATA_DIR = new URL('../../public/data/', import.meta.url);
-const load = (file: string) => parseDataset(JSON.parse(readFileSync(new URL(file, DATA_DIR), 'utf-8')));
+// Datasets the user generated locally (npm run generate:datasets); never in git.
+const DATA_DIR = new URL('../../data/', import.meta.url);
+const localDatasets = (): [string, Dataset][] => {
+  if (!existsSync(DATA_DIR)) return [];
+  return readdirSync(DATA_DIR)
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => [file, parseDataset(JSON.parse(readFileSync(new URL(file, DATA_DIR), 'utf-8')))]);
+};
 
-// The pilot datasets are git-ignored; the smoke tests run only where they exist.
-const DATASETS = ['demo.json', 'fgk-2024.json', 'fgk.json', 'ifos.json', 'time.json', 'fgk-auto.json'].filter((file) =>
-  existsSync(new URL(file, DATA_DIR)),
-);
+// The empty start view always renders; the generated datasets only where they exist.
+const DATASETS: [string, Dataset][] = [
+  ['emptyDataset', emptyDataset],
+  ...localDatasets(),
+];
 
 describe('view smoke render', () => {
-  for (const file of DATASETS) {
+  for (const [file, dataset] of DATASETS) {
     it(`renders income and balance for ${file}`, () => {
-      const dataset = load(file);
       const report = validateDataset(dataset);
       const periodId = dataset.periods[dataset.periods.length - 1].id;
       const income = renderToString(
@@ -39,8 +47,7 @@ describe('view smoke render', () => {
       expect(income).not.toContain('Abschlussprüfer');
       expect(balance).not.toContain('Anlagenspiegel');
 
-      if (file !== 'demo.json') {
-        // The demo dataset has its own fact keys and never showed these sections.
+      if (file !== 'emptyDataset') {
         // "Weitere Angaben" start folded away, where the dataset has any.
         if ((dataset.notes?.length ?? 0) > 0) {
           expect(income).toContain('<details class="card collapsible">');
@@ -55,7 +62,6 @@ describe('view smoke render', () => {
     });
 
     it(`renders the Anlagespiegel for ${file}`, () => {
-      const dataset = load(file);
       if (!dataset.schedules?.length) return;
       const report = validateDataset(dataset);
       const periodId = dataset.periods[dataset.periods.length - 1].id;
@@ -69,6 +75,15 @@ describe('view smoke render', () => {
       }
     });
   }
+
+  it('renders the empty start view with boxes and dashes instead of figures', () => {
+    const periodId = emptyDataset.periods[emptyDataset.periods.length - 1].id;
+    const balance = renderToString(
+      <BalanceView dataset={emptyDataset} periodId={periodId} report={reportForView(validateDataset(emptyDataset), 'balance')} />,
+    );
+    expect(balance).toContain('Bilanzsumme');
+    expect(balance).toContain('–');
+  });
 });
 
 describe('chart controls', () => {

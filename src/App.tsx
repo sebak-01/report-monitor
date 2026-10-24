@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { ViewSelect } from './components/ViewSelect';
 import { de } from './i18n/de';
-import { fetchDataset, previousPeriodId, selectablePeriods, sourceFor } from './lib/dataset';
+import { previousPeriodId, selectablePeriods, sourceFor } from './lib/dataset';
+import { emptyDataset } from './lib/emptyDataset';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SourceSelect } from './components/SourceSelect';
@@ -22,21 +23,6 @@ import { BalanceView } from './views/BalanceView';
 import type { ViewProps } from './views/common';
 import { IncomeView } from './views/IncomeView';
 
-/**
- * Bundled datasets; every file that loads is offered in the "Datenquelle"
- * dropdown. The pilot dataset is not part of the public repository; demo.json
- * (invented figures) is the fallback that is always there.
- */
-const DATASET_URLS = ['fgk.json', 'fgk-auto.json', 'ifos.json', 'time.json', 'demo.json'].map(
-  (name) => `${import.meta.env.BASE_URL}data/${name}`,
-);
-
-async function loadBundled(): Promise<Dataset[]> {
-  const loaded = await Promise.all(DATASET_URLS.map((url) => fetchDataset(url).catch(() => null)));
-  const datasets = loaded.filter((d): d is Dataset => d !== null);
-  return datasets.length > 0 ? datasets : [];
-}
-
 /** The component that renders each view id of the dataset. */
 const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
   balance: BalanceView,
@@ -46,15 +32,6 @@ const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
 };
 
 const BUILTIN = 'builtin';
-
-/** Bundled datasets are addressed as "builtin:0", "builtin:1", … */
-const builtinId = (index: number) => `${BUILTIN}:${index}`;
-const isBuiltinId = (id: string) => id === BUILTIN || id.startsWith(`${BUILTIN}:`);
-
-type State =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; datasets: Dataset[] };
 
 /** The selected view and year live in the URL hash (#/balance/2024), so a page can be linked and reloaded. */
 function readHash(viewIds: string[], periodIds: string[]): { view: string; period: string } {
@@ -93,7 +70,6 @@ function useIsUploadRoute(): boolean {
 }
 
 export default function App() {
-  const [state, setState] = useState<State>({ status: 'loading' });
   const [stored, setStored] = useState<StoredDataset[]>([]);
   const [storedLoaded, setStoredLoaded] = useState(false);
   const [activeId, setActiveId] = useState<string>(() => readActiveSource() ?? BUILTIN);
@@ -101,19 +77,6 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    loadBundled().then(
-      (datasets) => {
-        if (cancelled) return;
-        if (datasets.length === 0) {
-          setState({ status: 'error', message: 'Keine mitgelieferten Daten geladen.' });
-        } else {
-          setState({ status: 'ready', datasets });
-        }
-      },
-      (error: unknown) =>
-        !cancelled &&
-        setState({ status: 'error', message: error instanceof Error ? error.message : String(error) }),
-    );
     listStored().then((items) => {
       if (cancelled) return;
       // Datasets added during this visit (e.g. when the browser refuses to store) stay in the list.
@@ -125,17 +88,14 @@ export default function App() {
     };
   }, []);
 
-  const bundled = state.status === 'ready' ? state.datasets : [];
-  const builtinIndex = isBuiltinId(activeId) ? Math.max(0, Number(activeId.split(':')[1] ?? 0)) : -1;
-  const builtin = builtinIndex >= 0 ? bundled[builtinIndex] ?? null : null;
-  const active = isBuiltinId(activeId) ? null : (stored.find((item) => item.id === activeId) ?? null);
-  // A remembered upload that no longer exists falls back to the bundled data.
-  const dataset = active ? active.dataset : builtin ?? bundled[0] ?? null;
-  const effectiveId = active ? active.id : builtin ? builtinId(bundled.indexOf(builtin)) : BUILTIN;
+  const active = activeId === BUILTIN ? null : (stored.find((item) => item.id === activeId) ?? null);
+  // Without an upload the dashboard shows the empty structure (boxes, no figures).
+  const dataset: Dataset = active ? active.dataset : emptyDataset;
+  const effectiveId = active ? active.id : BUILTIN;
 
   const use = useCallback((id: string) => {
     setActiveId(id);
-    writeActiveSource(isBuiltinId(id) ? null : id);
+    writeActiveSource(id === BUILTIN ? null : id);
   }, []);
 
   const importDataset = useCallback(
@@ -175,7 +135,7 @@ export default function App() {
         <main>
           <UploadPage
             stored={stored}
-            builtinOptions={bundled.map((d, i) => ({ id: builtinId(i), name: d.entity.name }))}
+            builtinOptions={[{ id: BUILTIN, name: de.empty.title }]}
             activeId={effectiveId}
             onImport={importDataset}
             onUse={use}
@@ -187,36 +147,25 @@ export default function App() {
   }
 
   const waitingForStored = activeId !== BUILTIN && !storedLoaded && !active;
-  if (state.status === 'loading' || waitingForStored) {
+  if (waitingForStored) {
     return (
       <main className="page">
         <p role="status">{de.loading}</p>
       </main>
     );
   }
-  if (!dataset) {
-    return (
-      <main className="page">
-        <p role="alert">
-          {de.loadError} <span className="muted">({state.status === 'error' ? state.message : ''})</span>
-        </p>
-        <p>
-          <a href="#/upload">{de.upload.link}</a>
-        </p>
-      </main>
-    );
-  }
   const sourceOptions = [
-    ...bundled.map((d, i) => ({ id: builtinId(i), name: d.entity.name })),
+    { id: BUILTIN, name: de.empty.title },
     ...stored.map((i) => ({ id: i.id, name: i.name })),
   ];
   return (
     <ErrorBoundary key={effectiveId}>
       <Dashboard
         dataset={dataset}
-        sourceOptions={sourceOptions.length > 1 ? sourceOptions : []}
+        sourceOptions={sourceOptions}
         sourceId={effectiveId}
         onSourceChange={use}
+        empty={!active}
       />
     </ErrorBoundary>
   );
@@ -227,9 +176,11 @@ interface DashboardProps {
   sourceOptions: { id: string; name: string }[];
   sourceId: string;
   onSourceChange: (id: string) => void;
+  /** True when no file is loaded: the boxes show, but without figures. */
+  empty: boolean;
 }
 
-function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange }: DashboardProps) {
+function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: DashboardProps) {
   // Only views this app can render are offered in the dropdown.
   const views = useMemo(() => dataset.views.filter((v) => VIEW_COMPONENTS[v.id]), [dataset]);
   const viewIds = useMemo(() => views.map((v) => v.id), [views]);
@@ -250,9 +201,7 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange }: Dashboa
         ? de.sourceStatus.textLayer
         : source?.extraction === 'upload'
           ? de.sourceStatus.upload
-          : source?.extraction === 'demo'
-            ? de.sourceStatus.demo
-            : null;
+          : null;
   const formerName = dataset.entity.formerNames?.[0];
 
   useEffect(() => {
@@ -267,8 +216,8 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange }: Dashboa
       <header className="page-header">
         <div className="page-header-main">
           <p className="eyebrow">{de.appTitle}</p>
-          <h1>{dataset.entity.name}</h1>
-          <p className="lede">{de.subtitle(period, previous)}</p>
+          <h1>{empty ? de.empty.title : dataset.entity.name}</h1>
+          <p className="lede">{empty ? de.empty.lede : de.subtitle(period, previous)}</p>
           <p className="header-links">
             <a href="#/upload">{de.upload.link}</a>
           </p>
@@ -277,7 +226,7 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange }: Dashboa
           )}
         </div>
         <div className="selects">
-          {sourceOptions.length > 0 && (
+          {sourceOptions.length > 1 && (
             <SourceSelect options={sourceOptions} value={sourceId} onChange={onSourceChange} />
           )}
           <ViewSelect views={views} value={view.id} onChange={(id) => go(id, period)} />
@@ -306,7 +255,7 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange }: Dashboa
         <ViewComponent dataset={dataset} periodId={period} report={report} />
       </main>
 
-      <footer className="page-footer">{source?.extraction === 'upload' ? de.upload.footer : source?.extraction === 'demo' ? de.footer.demo : de.footer.note}</footer>
+      <footer className="page-footer">{source?.extraction === 'upload' ? de.upload.footer : de.footer.note}</footer>
     </div>
   );
 }

@@ -229,6 +229,11 @@ export function previousPeriodId(dataset: Dataset, periodId: string): string | n
   return index > 0 ? periods[index - 1].id : null;
 }
 
+/** True when the dataset carries no figures at all (the empty start view). */
+export function isEmptyDataset(dataset: Dataset): boolean {
+  return !dataset.facts.some((f) => Object.values(f.values).some((v) => v !== null && v !== undefined));
+}
+
 /** Periods that have their own report, oldest first. These can be selected in the dashboard. */
 export function selectablePeriods(dataset: Dataset): Period[] {
   return sortedPeriods(dataset).filter((p) => !p.comparisonOnly);

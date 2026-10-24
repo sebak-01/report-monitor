@@ -8,7 +8,7 @@ import { buildStatementRows } from './statementRows';
 import { reportForView, validateDataset } from './validate';
 
 // The pilot dataset is not part of the public repository; these tests only run where the file exists.
-const PILOT_FILE = new URL('../../public/data/fgk.json', import.meta.url);
+const PILOT_FILE = new URL('../../data/fgk.json', import.meta.url);
 const hasPilot = existsSync(PILOT_FILE);
 const describePilot = describe.skipIf(!hasPilot);
 

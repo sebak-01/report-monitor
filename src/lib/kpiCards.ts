@@ -2,6 +2,7 @@ import { de } from '../i18n/de';
 import type { Dataset } from '../types';
 import {
   createLookup,
+  isEmptyDataset,
   latestPeriodId,
   previousPeriodId,
   type ValueLookup,
@@ -239,7 +240,8 @@ export function buildKpiCards(dataset: Dataset, viewId: string, selected?: strin
   const lookup = createLookup(dataset);
 
   const cards: KpiCardModel[] = [];
-  for (const spec of SPECS[viewId] ?? []) {
+  const specs = SPECS[viewId] ?? [];
+  for (const spec of specs) {
     const value = metricValue(dataset, lookup, spec.source, periodId, previousId);
     if (value === null) continue;
     const prior =
@@ -263,6 +265,18 @@ export function buildKpiCards(dataset: Dataset, viewId: string, selected?: strin
       delta: buildDelta(spec, value, prior, previousId),
     });
   }
+  // The empty start view: the usual cards show, but without figures.
+  if (cards.length === 0 && specs.length > 0 && isEmptyDataset(dataset)) {
+    return specs.slice(0, 4).map((spec) => ({
+      id: spec.id,
+      label: spec.label,
+      value: '–',
+      exact: null,
+      detail: null,
+      prior: null,
+      delta: null,
+    }));
+  }
   // A dataset without the expected keys (another company) falls back to its own
   // first figures, so the view still shows something.
   if (cards.length === 0) return genericCards(dataset, viewId, periodId, previousId);
@@ -278,17 +292,21 @@ function genericCards(
 ): KpiCardModel[] {
   const view = dataset.views.find((v) => v.id === viewId);
   const statements = view?.statements ?? [];
-  const facts = dataset.facts.filter((f) => statements.includes(f.statement) && f.values[periodId] != null);
-  return facts.slice(0, 4).map((fact) => {
-    const value = fact.values[periodId] as number;
+  const facts = dataset.facts.filter((f) => statements.includes(f.statement));
+  const withValue = facts.filter((f) => f.values[periodId] != null);
+  // The empty start view: the boxes show, but without figures.
+  const chosen = (withValue.length > 0 ? withValue : facts).slice(0, 4);
+  return chosen.map((fact) => {
+    const value = fact.values[periodId] ?? null;
     const prior = previousId === null ? null : (fact.values[previousId] ?? null);
     return {
       id: fact.key,
       label: fact.labelDe,
-      value: formatByUnit(value, fact.unit),
-      exact: fact.unit === 'EUR' ? formatEur(value) : null,
+      value: value === null ? '–' : formatByUnit(value, fact.unit),
+      exact: value !== null && fact.unit === 'EUR' ? formatEur(value) : null,
       detail: null,
-      prior: prior !== null && previousId !== null ? `${previousId}: ${formatByUnit(prior, fact.unit)}` : null,
+      prior:
+        prior !== null && previousId !== null ? `${previousId}: ${formatByUnit(prior, fact.unit)}` : null,
       delta: null,
     };
   });

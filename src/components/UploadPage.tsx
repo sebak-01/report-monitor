@@ -26,7 +26,7 @@ const DEDICATED_VIEWS = ['balance', 'income', 'anlagespiegel'];
 
 interface Props {
   stored: StoredDataset[];
-  /** The bundled datasets, offered as "Mitgelieferte Daten". */
+  /** The empty start view, offered as "Keine Daten". */
   builtinOptions: { id: string; name: string }[];
   activeId: string;
   /** Saves the dataset and shows it. Resolves to false when the browser refused to store it. */
@@ -421,7 +421,7 @@ function StoredList({ stored, builtinOptions, activeId, onUse, onDelete }: Omit<
         {builtinOptions.map((option) => (
           <li key={option.id}>
             <span>
-              <strong>{option.name}</strong> <span className="muted">· {de.upload.builtin}</span>
+              <strong>{option.name}</strong>
             </span>
             {activeId === option.id ? (
               <span className="pill">{de.upload.inUse}</span>

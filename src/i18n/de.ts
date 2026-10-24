@@ -14,13 +14,16 @@ export const de = {
   loading: 'Daten werden geladen …',
   loadError: 'Die Daten konnten nicht geladen werden.',
   renderError: 'Die Darstellung dieses Datensatzes ist gescheitert.',
+  empty: {
+    title: 'Keine Daten geladen',
+    lede: 'Bitte laden Sie einen Jahresabschluss hoch – die Übersicht zeigt dann die Zahlen.',
+  },
   source: 'Quelle',
   sourceStatus: {
     manualUnverified: 'Manuell erfasst, nicht unabhängig geprüft',
     manual: 'Manuell erfasst',
     textLayer: 'Aus dem Textteil des PDFs übernommen, nicht unabhängig geprüft',
     upload: 'Hochgeladen, nicht geprüft',
-    demo: 'Fiktive Beispieldaten',
   },
 
   viewSelect: {
@@ -102,8 +105,7 @@ export const de = {
     saveFailed:
       'Ihr Browser erlaubt kein Speichern. Die Daten sind nur bis zum Schließen dieser Seite verfügbar.',
     storedTitle: 'Geladene Datensätze',
-    storedEmpty: 'Noch nichts geladen. Das Dashboard zeigt die mitgelieferten Daten.',
-    builtin: 'Mitgelieferte Daten',
+    storedEmpty: 'Noch nichts geladen. Das Dashboard zeigt dann die Übersicht ohne Zahlen.',
     use: 'Anzeigen',
     inUse: 'Wird angezeigt',
     remove: 'Löschen',
@@ -294,7 +296,6 @@ export const de = {
   },
 
   footer: {
-    demo: 'Fiktive Beispieldaten zur Veranschaulichung, keine echten Unternehmenszahlen.',
     note: 'Alle Zahlen stammen aus dem jeweils verlinkten Jahresabschluss; sie wurden maschinell aus den PDFs ausgelesen bzw. von Hand erfasst und sind nicht unabhängig geprüft.',
   },
 };

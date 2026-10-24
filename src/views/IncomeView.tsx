@@ -6,7 +6,7 @@ import { TrendChart } from '../components/TrendChart';
 import { StatementTable } from '../components/StatementTable';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { de } from '../i18n/de';
-import { sortedPeriods } from '../lib/dataset';
+import { isEmptyDataset, sortedPeriods } from '../lib/dataset';
 import { formatAmount, formatByUnit, formatTeur } from '../lib/format';
 import { buildGroupedModel, buildTrendModel } from '../lib/grouped';
 import { buildKpiCards } from '../lib/kpiCards';
@@ -110,19 +110,26 @@ export function IncomeView({ dataset, periodId, report }: ViewProps) {
   // Detail lines of the prior-period items: only those with a value in one of the shown years.
   const shownPriorYears = priorYears.years;
   const priorColumns = [...shownPriorYears].reverse();
-  // Companies without the Anhang breakdown of the revenue get no empty table.
-  const hasRevenueSplit = REVENUE_PARTS.some((key) => [currentId, previousId].some((p) => value(key, p) !== null));
-  const hasRegions = [currentId, previousId].some((p) => value('revenue_share_domestic', p) !== null);
+  // Companies without the Anhang breakdown of the revenue get no empty table;
+  // the empty start view shows every box with "–".
+  const empty = isEmptyDataset(dataset);
+  const hasRevenueSplit =
+    empty || REVENUE_PARTS.some((key) => [currentId, previousId].some((p) => value(key, p) !== null));
+  const hasRegions = empty || [currentId, previousId].some((p) => value('revenue_share_domestic', p) !== null);
   const detailKeys = (parent: string) =>
     dataset.facts
-      .filter((f) => f.parentKey === parent && shownPriorYears.some((p) => (value(f.key, p) ?? 0) !== 0))
+      .filter(
+        (f) =>
+          f.parentKey === parent &&
+          (empty || shownPriorYears.some((p) => (value(f.key, p) ?? 0) !== 0)),
+      )
       .map((f) => f.key);
   const priorRows: DataTableRow[] = [];
   for (const [parent, label] of [
     ['prior_period_income', de.income.priorIncome],
     ['prior_period_expenses', de.income.priorExpenses],
   ] as const) {
-    if (!shownPriorYears.some((p) => value(parent, p) !== null)) continue;
+    if (!empty && !shownPriorYears.some((p) => value(parent, p) !== null)) continue;
     priorRows.push({ key: parent, label, cells: priorColumns.map((p) => teur(parent, p)) });
     for (const key of detailKeys(parent)) {
       priorRows.push({

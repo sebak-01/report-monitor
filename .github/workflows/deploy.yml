@@ -1,6 +1,6 @@
 # Builds the static site and publishes it to GitHub Pages on every push to main.
-# Uploaded data never touches CI: uploads stay in the browser's IndexedDB, and the
-# pilot dataset is git-ignored, so the artifact contains the demo data only.
+# No data is in the repository or in CI: datasets are generated locally and
+# loaded per upload into the browser's IndexedDB, so the artifact is code only.
 name: Deploy to GitHub Pages
 
 on:

@@ -7,7 +7,7 @@ import { TrendChart } from '../components/TrendChart';
 import { StatementTable } from '../components/StatementTable';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { de } from '../i18n/de';
-import { sortedPeriods } from '../lib/dataset';
+import { isEmptyDataset, sortedPeriods } from '../lib/dataset';
 import { formatAmount, formatEur } from '../lib/format';
 import { buildGroupedModel, buildStackedModel, buildTrendModel } from '../lib/grouped';
 import { buildKpiCards } from '../lib/kpiCards';
@@ -73,6 +73,8 @@ export function BalanceView({ dataset, periodId, report }: ViewProps) {
   const trendModel = useMemo(() => buildTrendModel(dataset, TREND_ITEMS), [dataset]);
   const labelOf = useMemo(() => new Map(dataset.facts.map((f) => [f.key, f.labelDe])), [dataset]);
   const allYears = useMemo(() => sortedPeriods(dataset).map((p) => p.id), [dataset]);
+  // Without any figure the boxes still show – every cell just reads "–".
+  const empty = isEmptyDataset(dataset);
 
   const assetYears = useChartYears(allYears);
   const [assetType, setAssetType] = useState<ChartType>('bar');
@@ -109,11 +111,14 @@ export function BalanceView({ dataset, periodId, report }: ViewProps) {
     title: string,
     items: { key: string; label: string; kind?: DataTableRow['kind']; optional?: boolean }[],
   ) => {
-    // Companies without these Anhang figures get no empty table.
+    // Companies without these Anhang figures get no empty table – but the
+    // empty start view shows every box with "–".
     const shown = items.filter(
       (item) => !item.optional || [currentId, previousId].some((p) => (value(item.key, p) ?? 0) !== 0),
     );
-    if (!shown.some((item) => [currentId, previousId].some((p) => value(item.key, p) !== null))) return null;
+    if (!empty && !shown.some((item) => [currentId, previousId].some((p) => value(item.key, p) !== null))) {
+      return null;
+    }
     return (
       <section className="card">
         <DataTable
@@ -131,14 +136,18 @@ export function BalanceView({ dataset, periodId, report }: ViewProps) {
     );
   };
 
-  const maturityKnown = value('maturity_trade_payables_lt1y', currentId) !== null;
+  // The empty start view shows the table with "–"; a dataset without the
+  // Verbindlichkeitenspiegel at all shows the notice instead.
+  const maturityKnown = empty || value('maturity_trade_payables_lt1y', currentId) !== null;
   const hasAmount = (key: string) =>
     [currentId, previousId].some((p) => {
       const v = value(key, p);
       return v !== null && v !== 0;
     });
   // The bank line only appears in years in which there was a bank loan.
-  const maturityItems = MATURITY_ITEMS.filter((item) => item.slug !== 'bank' || hasAmount('bank_liabilities'));
+  const maturityItems = MATURITY_ITEMS.filter(
+    (item) => empty || item.slug !== 'bank' || hasAmount('bank_liabilities'),
+  );
   const maturityRows: DataTableRow[] = maturityItems.map(({ slug, total }) => ({
     key: slug,
     label: labelOf.get(total) ?? slug,

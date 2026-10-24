@@ -3,14 +3,13 @@ dist
 *.local
 .DS_Store
 
-# Private pilot data and tooling (annual accounts of a state-owned research institute)
-# – not part of the public repository
-public/data/fgk.json
-public/data/fgk-2024.json
-public/data/fgk-auto.json
+# Datasets and report extracts stay out of the repository entirely: generate
+# them locally (npm run generate:datasets -> data/) and load them per upload.
+data/
+public/data/
+*_extracted.json
+private-data/
 tools/base/
 tools/build_dataset.py
 tools/extract_statements.py
 tools/__pycache__/
-*_extracted.json
-private-data/
