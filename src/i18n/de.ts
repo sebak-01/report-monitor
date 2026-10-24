@@ -12,7 +12,6 @@ export const de = {
   formerName: (name: string, until: string | null) =>
     until ? `Bis ${until} firmierte die Gesellschaft als ${name}` : `Früherer Name: ${name}`,
   loading: 'Daten werden geladen …',
-  loadError: 'Die Daten konnten nicht geladen werden.',
   renderError: 'Die Darstellung dieses Datensatzes ist gescheitert.',
   empty: {
     title: 'Keine Daten geladen',

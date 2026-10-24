@@ -188,14 +188,6 @@ export function parseDataset(input: unknown): Dataset {
   };
 }
 
-export async function fetchDataset(url: string): Promise<Dataset> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new DatasetError(`Could not load ${url} (HTTP ${response.status})`);
-  }
-  return parseDataset(await response.json());
-}
-
 /**
  * Looks up a fact value.
  *  - `undefined`: the key does not exist in the dataset
