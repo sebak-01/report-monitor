@@ -7,6 +7,7 @@ dist
 # – not part of the public repository
 public/data/fgk.json
 public/data/fgk-2024.json
+public/data/fgk-auto.json
 tools/base/
 tools/build_dataset.py
 tools/extract_statements.py

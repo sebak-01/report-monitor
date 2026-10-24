@@ -110,6 +110,9 @@ export function IncomeView({ dataset, periodId, report }: ViewProps) {
   // Detail lines of the prior-period items: only those with a value in one of the shown years.
   const shownPriorYears = priorYears.years;
   const priorColumns = [...shownPriorYears].reverse();
+  // Companies without the Anhang breakdown of the revenue get no empty table.
+  const hasRevenueSplit = REVENUE_PARTS.some((key) => [currentId, previousId].some((p) => value(key, p) !== null));
+  const hasRegions = [currentId, previousId].some((p) => value('revenue_share_domestic', p) !== null);
   const detailKeys = (parent: string) =>
     dataset.facts
       .filter((f) => f.parentKey === parent && shownPriorYears.some((p) => (value(f.key, p) ?? 0) !== 0))
@@ -201,34 +204,40 @@ export function IncomeView({ dataset, periodId, report }: ViewProps) {
           />
         )}
 
-        <div className="grid-2">
-          <section className="card">
-            <DataTable
-              title={de.income.revenueTableTitle}
-              subtitle={de.table.amountsInEur}
-              columns={[currentId, prevLabel]}
-              rows={revenueRows}
-            />
-          </section>
+        {(hasRevenueSplit || hasRegions) && (
+          <div className="grid-2">
+            {hasRevenueSplit && (
+              <section className="card">
+                <DataTable
+                  title={de.income.revenueTableTitle}
+                  subtitle={de.table.amountsInEur}
+                  columns={[currentId, prevLabel]}
+                  rows={revenueRows}
+                />
+              </section>
+            )}
 
-          <section className="card" aria-labelledby="region-title">
-            <h4 id="region-title" className="statement-title">
-              {de.income.regionTitle}
-            </h4>
-            <div className="tile-row">
-              <div className="tile">
-                <p className="tile-label">{de.income.domestic}</p>
-                <p className="tile-value">{pct('revenue_share_domestic', currentId)}</p>
-                <p className="tile-sub">{de.income.vsPrevious(prevLabel, pct('revenue_share_domestic', previousId))}</p>
-              </div>
-              <div className="tile">
-                <p className="tile-label">{de.income.foreign}</p>
-                <p className="tile-value">{pct('revenue_share_foreign', currentId)}</p>
-                <p className="tile-sub">{de.income.vsPrevious(prevLabel, pct('revenue_share_foreign', previousId))}</p>
-              </div>
-            </div>
-          </section>
-        </div>
+            {hasRegions && (
+              <section className="card" aria-labelledby="region-title">
+                <h4 id="region-title" className="statement-title">
+                  {de.income.regionTitle}
+                </h4>
+                <div className="tile-row">
+                  <div className="tile">
+                    <p className="tile-label">{de.income.domestic}</p>
+                    <p className="tile-value">{pct('revenue_share_domestic', currentId)}</p>
+                    <p className="tile-sub">{de.income.vsPrevious(prevLabel, pct('revenue_share_domestic', previousId))}</p>
+                  </div>
+                  <div className="tile">
+                    <p className="tile-label">{de.income.foreign}</p>
+                    <p className="tile-value">{pct('revenue_share_foreign', currentId)}</p>
+                    <p className="tile-sub">{de.income.vsPrevious(prevLabel, pct('revenue_share_foreign', previousId))}</p>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+        )}
 
         {priorRows.length > 0 && (
           <CollapsibleCard title={de.income.priorPeriodTitle} subtitle={de.income.priorPeriodSubtitle}>

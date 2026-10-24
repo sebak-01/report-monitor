@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:datasets": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/generate-datasets.ts"
   },
   "dependencies": {
     "echarts": "^6.1.0",

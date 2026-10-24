@@ -1,4 +1,5 @@
-import type { Dataset, Period, SourceDoc } from '../types';
+import type { Dataset, Period, Schedule, ScheduleRow, SourceDoc } from '../types';
+import { parseNumber } from './upload/numbers';
 
 export class DatasetError extends Error {
   constructor(message: string) {
@@ -13,7 +14,8 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 
 function requireArray(raw: Record<string, unknown>, field: string): unknown[] {
   const value = raw[field];
-  if (!Array.isArray(value)) throw new DatasetError(`Field "${field}" must be an array`);
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new DatasetError(`Das Feld "${field}" muss eine Liste sein`);
   return value;
 }
 
@@ -28,28 +30,94 @@ function migrate(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
+ * Fact and schedule values must be JSON numbers or null. Hand-edited datasets
+ * often carry German amounts as text ("2.672.461,76"); these are normalized.
+ */
+function normalizeValue(factKey: string, value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new DatasetError(`Der Wert von "${factKey}" ist keine endliche Zahl`);
+    }
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseNumber(value, 'de') ?? parseNumber(value, 'en');
+    if (parsed === undefined || parsed === null) {
+      throw new DatasetError(`Der Wert von "${factKey}" ist weder eine Zahl noch null („${value}")`);
+    }
+    return parsed;
+  }
+  throw new DatasetError(`Der Wert von "${factKey}" ist weder eine Zahl noch null`);
+}
+
+function validateSchedule(raw: unknown, index: number): Schedule {
+  if (!isRecord(raw) || typeof raw.id !== 'string' || typeof raw.labelDe !== 'string') {
+    throw new DatasetError(`Der Anhangs-/Tabellenblock ${index + 1} braucht "id" und "labelDe"`);
+  }
+  if (!Array.isArray(raw.columns) || raw.columns.length === 0) {
+    throw new DatasetError(`Der Block "${raw.id}" braucht mindestens eine Spalte`);
+  }
+  if (!Array.isArray(raw.rows)) {
+    throw new DatasetError(`Der Block "${raw.id}" braucht eine Liste von Zeilen`);
+  }
+  const columnKeys = new Set<string>();
+  for (const c of raw.columns) {
+    if (!isRecord(c) || typeof c.key !== 'string' || typeof c.labelDe !== 'string' || typeof c.role !== 'string') {
+      throw new DatasetError(`Jede Spalte von "${raw.id}" braucht "key", "labelDe" und "role"`);
+    }
+    if (columnKeys.has(c.key)) {
+      throw new DatasetError(`Doppelter Spaltenschlüssel "${c.key}" in "${raw.id}"`);
+    }
+    columnKeys.add(c.key);
+  }
+  const rowKeys = new Set<string>();
+  for (const r of raw.rows) {
+    if (!isRecord(r) || typeof r.key !== 'string' || typeof r.labelDe !== 'string' || !isRecord(r.values)) {
+      throw new DatasetError(`Jede Zeile von "${raw.id}" braucht "key", "labelDe" und "values"`);
+    }
+    if (rowKeys.has(r.key)) {
+      throw new DatasetError(`Doppelter Zeilenschlüssel "${r.key}" in "${raw.id}"`);
+    }
+    rowKeys.add(r.key);
+    for (const [periodId, cells] of Object.entries(r.values as ScheduleRow['values'])) {
+      if (!isRecord(cells)) {
+        throw new DatasetError(`Die Werte von "${r.key}" (${periodId}) müssen ein Objekt sein`);
+      }
+      for (const [colKey, value] of Object.entries(cells)) {
+        if (!columnKeys.has(colKey)) {
+          throw new DatasetError(`Unbekannte Spalte "${colKey}" in "${r.key}" (${periodId})`);
+        }
+        cells[colKey] = normalizeValue(`${r.key}.${colKey}`, value);
+      }
+    }
+  }
+  return raw as unknown as Schedule;
+}
+
+/**
  * Runtime shape check for dataset files. Datasets will later come from
  * uploads, so the structure is verified before the rest of the app touches it.
  * This checks structure, not accounting: reconciliation lives in validate.ts.
  */
 export function parseDataset(input: unknown): Dataset {
-  if (!isRecord(input)) throw new DatasetError('Dataset must be a JSON object');
+  if (!isRecord(input)) throw new DatasetError('Der Datensatz muss ein JSON-Objekt sein');
   const raw = migrate(input);
 
   if (!isRecord(raw.entity) || typeof raw.entity.name !== 'string') {
-    throw new DatasetError('Field "entity.name" is required');
+    throw new DatasetError('Das Feld "entity.name" ist erforderlich');
   }
   const sources = requireArray(raw, 'sources');
   for (const source of sources) {
     if (!isRecord(source) || typeof source.period !== 'string' || typeof source.title !== 'string') {
-      throw new DatasetError('Every source needs string fields "period" and "title"');
+      throw new DatasetError('Jede Quelle braucht die Textfelder "period" und "title"');
     }
   }
-  if (!isRecord(raw.conventions)) throw new DatasetError('Field "conventions" is required');
+  if (!isRecord(raw.conventions)) throw new DatasetError('Das Feld "conventions" ist erforderlich');
 
-  if (!isRecord(raw.statements)) throw new DatasetError('Field "statements" is required');
+  if (!isRecord(raw.statements)) throw new DatasetError('Das Feld "statements" ist erforderlich');
   const views = requireArray(raw, 'views');
-  if (views.length === 0) throw new DatasetError('At least one view is required');
+  if (views.length === 0) throw new DatasetError('Mindestens eine Ansicht ist erforderlich');
   for (const v of views) {
     if (
       !isRecord(v) ||
@@ -57,47 +125,67 @@ export function parseDataset(input: unknown): Dataset {
       typeof v.labelDe !== 'string' ||
       !Array.isArray(v.statements)
     ) {
-      throw new DatasetError('Every view needs "id", "labelDe" and a "statements" array');
+      throw new DatasetError('Jede Ansicht braucht "id", "labelDe" und die Liste "statements"');
     }
   }
 
   const periods = requireArray(raw, 'periods');
-  if (periods.length === 0) throw new DatasetError('At least one period is required');
+  if (periods.length === 0) throw new DatasetError('Mindestens eine Periode ist erforderlich');
   for (const p of periods) {
     if (!isRecord(p) || typeof p.id !== 'string' || typeof p.end !== 'string') {
-      throw new DatasetError('Every period needs string fields "id" and "end"');
+      throw new DatasetError('Jede Periode braucht die Textfelder "id" und "end"');
     }
   }
 
-  for (const f of requireArray(raw, 'facts')) {
+  const facts = requireArray(raw, 'facts');
+  for (const f of facts) {
     if (!isRecord(f) || typeof f.key !== 'string' || !isRecord(f.values)) {
-      throw new DatasetError('Every fact needs a string "key" and an object "values"');
+      throw new DatasetError('Jede Position braucht ein Textfeld "key" und das Objekt "values"');
     }
-    for (const v of Object.values(f.values)) {
-      if (v !== null && typeof v !== 'number') {
-        throw new DatasetError(`Fact "${f.key}" has a value that is neither a number nor null`);
-      }
+    for (const [periodId, value] of Object.entries(f.values)) {
+      f.values[periodId] = normalizeValue(`${f.key} (${periodId})`, value);
     }
   }
+  const factKeys = new Set<string>();
+  for (const f of facts) {
+    const key = (f as Record<string, unknown>).key as string;
+    if (factKeys.has(key)) {
+      throw new DatasetError(`Doppelter Positionsschlüssel "${key}"`);
+    }
+    factKeys.add(key);
+  }
 
-  for (const k of requireArray(raw, 'derivedKpis')) {
+  const schedules = raw.schedules === undefined ? [] : requireArray(raw, 'schedules');
+  const parsedSchedules = schedules.map((s, i) => validateSchedule(s, i));
+
+  const derivedKpis = requireArray(raw, 'derivedKpis');
+  for (const k of derivedKpis) {
     if (!isRecord(k) || typeof k.key !== 'string' || typeof k.formula !== 'string') {
-      throw new DatasetError('Every derived KPI needs string fields "key" and "formula"');
+      throw new DatasetError('Jede Kennzahl braucht die Textfelder "key" und "formula"');
     }
   }
 
-  for (const c of requireArray(raw, 'checks')) {
+  const checks = requireArray(raw, 'checks');
+  for (const c of checks) {
     if (
       !isRecord(c) ||
       typeof c.id !== 'string' ||
       typeof c.lhs !== 'string' ||
       typeof c.rhs !== 'string'
     ) {
-      throw new DatasetError('Every check needs string fields "id", "lhs" and "rhs"');
+      throw new DatasetError('Jede Prüfung braucht die Textfelder "id", "lhs" und "rhs"');
     }
   }
 
-  return raw as unknown as Dataset;
+  return {
+    ...(raw as unknown as Dataset),
+    sources: sources as SourceDoc[],
+    periods: periods as Period[],
+    facts: facts as Dataset['facts'],
+    schedules: parsedSchedules.length > 0 ? parsedSchedules : undefined,
+    derivedKpis: derivedKpis as Dataset['derivedKpis'],
+    checks: checks as Dataset['checks'],
+  };
 }
 
 export async function fetchDataset(url: string): Promise<Dataset> {

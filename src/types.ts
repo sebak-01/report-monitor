@@ -1,7 +1,8 @@
 /**
- * Dataset format (schema version 0.3).
+ * Dataset format (schema version 0.4).
  *
  * One `Fact` is one reported figure with its values for several periods.
+ * A `Schedule` is a reported matrix (Anlagespiegel): rows x columns per period.
  * Units:
  *  - EUR / TEUR : amounts in euros / thousand euros
  *  - count      : a plain number (e.g. headcount)
@@ -61,6 +62,60 @@ export interface DerivedKpi {
   unit: Unit;
 }
 
+/**
+ * Semantic role of a schedule column. The roles drive the built-in roll-forward
+ * checks; the printed labels differ between companies and years.
+ */
+export type ScheduleColumnRole =
+  | 'cost-start'
+  | 'additions'
+  | 'disposals'
+  | 'transfers'
+  | 'cost-end'
+  | 'accdep-start'
+  | 'dep-expense'
+  | 'dep-disposals'
+  | 'dep-transfers'
+  | 'accdep-end'
+  | 'write-ups'
+  | 'book-value'
+  | 'book-value-prior'
+  | 'other';
+
+export interface ScheduleColumn {
+  key: string;
+  labelDe: string;
+  /** Super-heading spanning several columns, e.g. "Anschaffungs- und Herstellungskosten". */
+  groupDe?: string;
+  role: ScheduleColumnRole;
+  unit?: Unit;
+  /** Report years whose layout has no such column. */
+  absentIn?: string[];
+}
+
+export interface ScheduleRow {
+  key: string;
+  labelDe: string;
+  numberLabel?: string;
+  parentKey?: string;
+  emphasis?: Emphasis;
+  /** Report years whose layout has no such line. */
+  absentIn?: string[];
+  /** period id -> column key -> value (null = not printed / redacted). */
+  values: Record<string, Record<string, number | null>>;
+  note?: string;
+}
+
+/** A reported matrix, most importantly the Anlagespiegel (fixed asset schedule). */
+export interface Schedule {
+  id: string;
+  labelDe: string;
+  sourceDe?: string;
+  unit: Unit;
+  columns: ScheduleColumn[];
+  rows: ScheduleRow[];
+}
+
 /** A reconciliation check: `lhs` must equal `rhs` within the dataset tolerance. */
 export interface Check {
   id: string;
@@ -84,6 +139,8 @@ export interface ViewMeta {
   labelDe: string;
   sourceDe?: string;
   statements: string[];
+  /** Schedule ids this view shows (e.g. "anlagespiegel"). */
+  schedules?: string[];
 }
 
 export interface Note {
@@ -140,6 +197,8 @@ export interface Dataset {
   statements: Record<string, StatementMeta>;
   views: ViewMeta[];
   facts: Fact[];
+  /** Matrices such as the Anlagespiegel; optional, schema 0.4. */
+  schedules?: Schedule[];
   derivedKpis: DerivedKpi[];
   checks: Check[];
   notes?: Note[];

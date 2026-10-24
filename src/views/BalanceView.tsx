@@ -108,23 +108,28 @@ export function BalanceView({ dataset, periodId, report }: ViewProps) {
   const rollForward = (
     title: string,
     items: { key: string; label: string; kind?: DataTableRow['kind']; optional?: boolean }[],
-  ) => (
-    <section className="card">
-      <DataTable
-        title={title}
-        subtitle={de.table.amountsInEur}
-        columns={[currentId, prevLabel]}
-        rows={items
-          .filter((item) => !item.optional || [currentId, previousId].some((p) => (value(item.key, p) ?? 0) !== 0))
-          .map((item) => ({
-          key: item.key,
-          label: item.label,
-          kind: item.kind,
-          cells: [amount(item.key, currentId), amount(item.key, previousId)],
-        }))}
-      />
-    </section>
-  );
+  ) => {
+    // Companies without these Anhang figures get no empty table.
+    const shown = items.filter(
+      (item) => !item.optional || [currentId, previousId].some((p) => (value(item.key, p) ?? 0) !== 0),
+    );
+    if (!shown.some((item) => [currentId, previousId].some((p) => value(item.key, p) !== null))) return null;
+    return (
+      <section className="card">
+        <DataTable
+          title={title}
+          subtitle={de.table.amountsInEur}
+          columns={[currentId, prevLabel]}
+          rows={shown.map((item) => ({
+            key: item.key,
+            label: item.label,
+            kind: item.kind,
+            cells: [amount(item.key, currentId), amount(item.key, previousId)],
+          }))}
+        />
+      </section>
+    );
+  };
 
   const maturityKnown = value('maturity_trade_payables_lt1y', currentId) !== null;
   const hasAmount = (key: string) =>

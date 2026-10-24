@@ -1,5 +1,6 @@
 import { DatasetError, parseDataset } from '../dataset';
 import type { Dataset } from '../../types';
+import { looksLikeExtract, readReportMeta, type ReportExtract } from '../extract/detect';
 import { parseCsv } from './csv';
 import type { RawTable } from './mapping';
 import type { Cell } from './numbers';
@@ -17,7 +18,8 @@ export class UploadError extends Error {
 
 export type UploadResult =
   | { kind: 'dataset'; dataset: Dataset; fileName: string }
-  | { kind: 'tables'; tables: RawTable[]; fileName: string; truncated: boolean };
+  | { kind: 'tables'; tables: RawTable[]; fileName: string; truncated: boolean }
+  | { kind: 'extract'; extract: ReportExtract; periodId: string; entityName: string; fileName: string };
 
 function extensionOf(name: string): string {
   const dot = name.lastIndexOf('.');
@@ -128,10 +130,20 @@ export async function readUpload(file: File): Promise<UploadResult> {
           throw error;
         }
       }
+      if (looksLikeExtract(json)) {
+        const meta = readReportMeta(json, file.name);
+        return {
+          kind: 'extract',
+          extract: json,
+          periodId: meta.periodId,
+          entityName: meta.entityName,
+          fileName: file.name,
+        };
+      }
       const table = tableFromJson(json);
       if (!table) {
         throw new UploadError(
-          'Die JSON-Datei ist weder ein Datensatz dieses Dashboards noch eine Liste von Zeilen (Objekten).',
+          'Die JSON-Datei ist weder ein Datensatz dieses Dashboards, ein Berichts-Extrakt (pages mit Text) noch eine Liste von Zeilen (Objekten).',
         );
       }
       tables = [table];
@@ -150,4 +162,24 @@ export async function readUpload(file: File): Promise<UploadResult> {
     return { ...table, rows: table.rows.slice(0, MAX_ROWS) };
   });
   return { kind: 'tables', tables, fileName: file.name, truncated };
+}
+
+/** Reads several uploaded files, one result per file (extracts can be merged). */
+export async function readUploads(
+  files: File[],
+): Promise<{ results: (UploadResult | { kind: 'error'; fileName: string; message: string })[] }> {
+  const results = await Promise.all(
+    files.map(async (file) => {
+      try {
+        return await readUpload(file);
+      } catch (error) {
+        return {
+          kind: 'error' as const,
+          fileName: file.name,
+          message: error instanceof UploadError ? error.message : 'Die Datei konnte nicht gelesen werden.',
+        };
+      }
+    }),
+  );
+  return { results };
 }

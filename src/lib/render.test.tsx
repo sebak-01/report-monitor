@@ -5,13 +5,16 @@ import { parseDataset } from './dataset';
 import { reportForView, validateDataset } from './validate';
 import { IncomeView } from '../views/IncomeView';
 import { BalanceView } from '../views/BalanceView';
+import { AnlagespiegelView } from '../views/AnlagespiegelView';
 import { ChartControls } from '../components/ChartControls';
 
 const DATA_DIR = new URL('../../public/data/', import.meta.url);
 const load = (file: string) => parseDataset(JSON.parse(readFileSync(new URL(file, DATA_DIR), 'utf-8')));
 
 // The pilot datasets are git-ignored; the smoke tests run only where they exist.
-const DATASETS = ['demo.json', 'fgk-2024.json', 'fgk.json'].filter((file) => existsSync(new URL(file, DATA_DIR)));
+const DATASETS = ['demo.json', 'fgk-2024.json', 'fgk.json', 'ifos.json', 'time.json', 'fgk-auto.json'].filter((file) =>
+  existsSync(new URL(file, DATA_DIR)),
+);
 
 describe('view smoke render', () => {
   for (const file of DATASETS) {
@@ -38,14 +41,31 @@ describe('view smoke render', () => {
 
       if (file !== 'demo.json') {
         // The demo dataset has its own fact keys and never showed these sections.
-        // "Weitere Angaben" and "Posten aus anderen Geschäftsjahren" start folded away.
-        expect(income).toContain('<details class="card collapsible">');
-        expect(balance).toContain('<details class="card collapsible">');
+        // "Weitere Angaben" start folded away, where the dataset has any.
+        if ((dataset.notes?.length ?? 0) > 0) {
+          expect(income).toContain('<details class="card collapsible">');
+          expect(balance).toContain('<details class="card collapsible">');
+        }
         // Statements start collapsed: the A./B./C./D. rows show their chevrons closed.
         expect(income).toContain('aria-expanded="false"');
         expect(balance).toContain('aria-expanded="false"');
         expect(income).toContain('Personalaufwand im Verhältnis zum Umsatz');
         expect(income).not.toContain('Beschäftigte');
+      }
+    });
+
+    it(`renders the Anlagespiegel for ${file}`, () => {
+      const dataset = load(file);
+      if (!dataset.schedules?.length) return;
+      const report = validateDataset(dataset);
+      const periodId = dataset.periods[dataset.periods.length - 1].id;
+      const html = renderToString(
+        <AnlagespiegelView dataset={dataset} periodId={periodId} report={reportForView(report, 'anlagespiegel')} />,
+      );
+      expect(html).toContain('Anlagespiegel');
+      // Every printed column of the schedule shows up as a table header.
+      for (const column of dataset.schedules[0].columns) {
+        expect(html).toContain(column.labelDe);
       }
     });
   }

@@ -1,4 +1,4 @@
-import type { Dataset } from '../types';
+import type { Dataset, Period, ScheduleRow } from '../types';
 import { createLookup, previousPeriodId, sortedPeriods } from './dataset';
 import { ExpressionError, parseExpression, type Node } from './expression';
 import { evaluateInPeriod, type FormulaFailure } from './formula';
@@ -100,7 +100,103 @@ export function validateDataset(dataset: Dataset): ValidationReport {
     }
   }
 
-  return summarize(results);
+  return summarize([...results, ...validateSchedules(dataset, periods)]);
+}
+
+/** Identity checks over the schedule columns (roll-forward of the Anlagespiegel). */
+function validateSchedules(dataset: Dataset, periods: Period[]): CheckResult[] {
+  const results: CheckResult[] = [];
+  const tolerance = dataset.conventions.tolerance ?? DEFAULT_TOLERANCE;
+  for (const schedule of dataset.schedules ?? []) {
+    const roleOf = new Map(schedule.columns.map((c) => [c.role, c.key]));
+    const cell = (row: ScheduleRow, period: string, role: string): number | null => {
+      const key = roleOf.get(role as never);
+      if (!key) return null;
+      const value = row.values[period]?.[key];
+      return value === undefined ? null : value;
+    };
+    const rules: { id: string; labelDe: string; check: (row: ScheduleRow, period: string) => [number, number] | null }[] = [
+      {
+        id: 'cost-rollforward',
+        labelDe: 'AHK: Anfang + Zugänge − Abgänge ± Umbuchungen = Ende',
+        check: (row, period) => {
+          const end = cell(row, period, 'cost-end');
+          if (end === null) return null;
+          const lhs =
+            (cell(row, period, 'cost-start') ?? 0) +
+            (cell(row, period, 'additions') ?? 0) -
+            (cell(row, period, 'disposals') ?? 0) +
+            (cell(row, period, 'transfers') ?? 0);
+          return [lhs, end];
+        },
+      },
+      {
+        id: 'accdep-rollforward',
+        labelDe: 'AfA: Anfang + Abschreibung − Abgänge ± Umbuchungen = Ende',
+        check: (row, period) => {
+          const end = cell(row, period, 'accdep-end');
+          if (end === null) return null;
+          const lhs =
+            (cell(row, period, 'accdep-start') ?? 0) +
+            (cell(row, period, 'dep-expense') ?? 0) -
+            (cell(row, period, 'dep-disposals') ?? 0) +
+            (cell(row, period, 'dep-transfers') ?? 0);
+          return [lhs, end];
+        },
+      },
+      {
+        id: 'book-value',
+        labelDe: 'Restbuchwert = AHK Ende − AfA Ende',
+        check: (row, period) => {
+          const book = cell(row, period, 'book-value');
+          const cost = cell(row, period, 'cost-end');
+          const dep = cell(row, period, 'accdep-end');
+          if (book === null || cost === null || dep === null) return null;
+          return [cost - dep, book];
+        },
+      },
+      {
+        id: 'book-value-prior',
+        labelDe: 'Restbuchwert Vorjahr = AHK Anfang − AfA Anfang',
+        check: (row, period) => {
+          const book = cell(row, period, 'book-value-prior');
+          const cost = cell(row, period, 'cost-start');
+          const dep = cell(row, period, 'accdep-start');
+          if (book === null || cost === null || dep === null) return null;
+          return [cost - dep, book];
+        },
+      },
+    ];
+
+    for (const rule of rules) {
+      for (const period of periods) {
+        let passed = 0;
+        let failed = 0;
+        let worst: { row: string; diff: number } | null = null;
+        for (const row of schedule.rows) {
+          const pair = rule.check(row, period.id);
+          if (!pair) continue;
+          const diff = pair[0] - pair[1];
+          if (Math.abs(diff) <= tolerance) passed += 1;
+          else {
+            failed += 1;
+            if (!worst || Math.abs(diff) > Math.abs(worst.diff)) worst = { row: row.labelDe, diff };
+          }
+        }
+        if (passed + failed === 0) continue;
+        results.push({
+          checkId: `${schedule.id}:${rule.id}`,
+          labelDe: `${schedule.labelDe} – ${rule.labelDe}`,
+          views: ['anlagespiegel'],
+          period: period.id,
+          status: failed === 0 ? 'pass' : 'fail',
+          diff: worst?.diff,
+          reason: worst ? { code: 'not-finite', detail: `${worst.row}: Abweichung ${worst.diff.toFixed(2)}` } : undefined,
+        });
+      }
+    }
+  }
+  return results;
 }
 
 function summarize(results: CheckResult[]): ValidationReport {

@@ -2,6 +2,7 @@ import { useCallback, useId, useMemo, useRef, useState, type DragEvent } from 'r
 import { de } from '../i18n/de';
 import { formatByUnit } from '../lib/format';
 import { validateDataset } from '../lib/validate';
+import { buildDataset, parseReport, type ParsedReport } from '../lib/extract/buildDataset';
 import {
   buildUploadDataset,
   columnCount,
@@ -10,17 +11,23 @@ import {
   type Mapping,
   type RawTable,
 } from '../lib/upload/mapping';
-import { ACCEPTED_EXTENSIONS, readUpload, UploadError, type UploadResult } from '../lib/upload/readFile';
+import {
+  ACCEPTED_EXTENSIONS,
+  readUploads,
+  UploadError,
+  type UploadResult,
+} from '../lib/upload/readFile';
 import { withGenericView } from '../lib/upload/renderable';
 import { newDatasetId, type StoredDataset } from '../lib/upload/storage';
 import type { Dataset } from '../types';
 import { MappingForm } from './MappingForm';
 
-const DEDICATED_VIEWS = ['balance', 'income'];
+const DEDICATED_VIEWS = ['balance', 'income', 'anlagespiegel'];
 
 interface Props {
   stored: StoredDataset[];
-  builtinName: string;
+  /** The bundled datasets, offered as "Mitgelieferte Daten". */
+  builtinOptions: { id: string; name: string }[];
   activeId: string;
   /** Saves the dataset and shows it. Resolves to false when the browser refused to store it. */
   onImport: (item: StoredDataset) => Promise<boolean>;
@@ -38,7 +45,7 @@ function formatDate(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('de-DE');
 }
 
-function DropZone({ onFile, busy }: { onFile: (file: File) => void; busy: boolean }) {
+function DropZone({ onFiles, busy }: { onFiles: (files: File[]) => void; busy: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const hintId = useId();
@@ -46,8 +53,8 @@ function DropZone({ onFile, busy }: { onFile: (file: File) => void; busy: boolea
   const onDrop = (event: DragEvent) => {
     event.preventDefault();
     setOver(false);
-    const file = event.dataTransfer.files[0];
-    if (file) onFile(file);
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) onFiles(files);
   };
 
   return (
@@ -60,23 +67,24 @@ function DropZone({ onFile, busy }: { onFile: (file: File) => void; busy: boolea
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
     >
-      <p className="dropzone-title">{busy ? de.upload.reading : de.upload.dropTitle}</p>
+      <p className="dropzone-title">{busy ? de.upload.reading : de.upload.dropTitleMulti}</p>
       <p className="muted">{de.upload.or}</p>
       <button type="button" className="button" disabled={busy} onClick={() => inputRef.current?.click()} aria-describedby={hintId}>
-        {de.upload.choose}
+        {de.upload.chooseMulti}
       </button>
       <p className="muted" id={hintId}>
-        {de.upload.formats}
+        {de.upload.formatsMulti}
       </p>
       <input
         ref={inputRef}
         type="file"
         hidden
+        multiple
         accept={ACCEPTED_EXTENSIONS.join(',')}
         data-testid="file-input"
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onFile(file);
+          const files = Array.from(e.target.files ?? []);
+          if (files.length > 0) onFiles(files);
           e.target.value = '';
         }}
       />
@@ -312,25 +320,118 @@ function DatasetImport({
   );
 }
 
-function StoredList({ stored, builtinName, activeId, onUse, onDelete }: Omit<Props, 'onImport'>) {
+/** Reports (one per year) merged into one multi-year dataset. */
+function ExtractImport({
+  reports,
+  onImport,
+  onCancel,
+}: {
+  reports: ParsedReport[];
+  onImport: (item: StoredDataset) => void | Promise<unknown>;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(reports[reports.length - 1]?.meta.entityName ?? '');
+  const prepared = useMemo(() => {
+    try {
+      const { dataset, warnings } = buildDataset(reports);
+      return { dataset: withGenericView(dataset, DEDICATED_VIEWS), warnings, error: null as string | null };
+    } catch (error) {
+      return {
+        dataset: null as Dataset | null,
+        warnings: [] as string[],
+        error: error instanceof Error ? error.message : 'Die Berichte konnten nicht zusammengeführt werden.',
+      };
+    }
+  }, [reports]);
+
+  const periods = prepared.dataset?.periods.map((p) => p.id).join(', ') ?? '';
+  const factCount = prepared.dataset?.facts.length ?? 0;
+  const scheduleRows = prepared.dataset?.schedules?.reduce((n, s) => n + s.rows.length, 0) ?? 0;
+
+  return (
+    <section className="card" aria-labelledby="extract-title">
+      <h3 id="extract-title" className="card-title">
+        {de.upload.reportsFound(reports.length)}
+      </h3>
+      <ul className="stored-list">
+        {reports.map((report) => (
+          <li key={report.fileName}>
+            <span>
+              <strong>{report.meta.periodId}</strong>{' '}
+              <span className="muted">
+                · {report.fileName} · {report.facts.length} Positionen
+                {report.schedule ? ` · Anlagespiegel (${report.schedule.rows.length} Zeilen)` : ''}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {prepared.error && (
+        <p className="message message--error" role="alert">
+          {prepared.error}
+        </p>
+      )}
+      <Messages title={de.upload.warnings} items={prepared.warnings} tone="warn" />
+      {prepared.dataset && (
+        <>
+          <p>
+            <strong>{de.upload.resultTitle}:</strong> {de.upload.result(factCount, periods)}
+            {scheduleRows > 0 ? ` · ${de.upload.scheduleRows(scheduleRows)}` : ''}
+          </p>
+          <NameField value={name} onChange={setName} />
+        </>
+      )}
+      <div className="actions">
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!prepared.dataset}
+          onClick={() =>
+            prepared.dataset &&
+            void onImport({
+              id: newDatasetId(),
+              name: name.trim() || prepared.dataset.entity.name,
+              fileName: reports.map((r) => r.fileName).join(', '),
+              createdAt: new Date().toISOString(),
+              dataset: {
+                ...prepared.dataset,
+                entity: { ...prepared.dataset.entity, name: name.trim() || prepared.dataset.entity.name },
+                sources: prepared.dataset.sources.map((s) => ({ ...s, extraction: s.extraction ?? 'upload' })),
+              },
+            })
+          }
+        >
+          {de.upload.import}
+        </button>
+        <button type="button" className="button" onClick={onCancel}>
+          {de.upload.cancel}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StoredList({ stored, builtinOptions, activeId, onUse, onDelete }: Omit<Props, 'onImport'>) {
   return (
     <section className="card" aria-labelledby="stored-title">
       <h3 id="stored-title" className="card-title">
         {de.upload.storedTitle}
       </h3>
       <ul className="stored-list">
-        <li>
-          <span>
-            <strong>{builtinName}</strong> <span className="muted">· {de.upload.builtin}</span>
-          </span>
-          {activeId === 'builtin' ? (
-            <span className="pill">{de.upload.inUse}</span>
-          ) : (
-            <button type="button" className="button" onClick={() => onUse('builtin')}>
-              {de.upload.use}
-            </button>
-          )}
-        </li>
+        {builtinOptions.map((option) => (
+          <li key={option.id}>
+            <span>
+              <strong>{option.name}</strong> <span className="muted">· {de.upload.builtin}</span>
+            </span>
+            {activeId === option.id ? (
+              <span className="pill">{de.upload.inUse}</span>
+            ) : (
+              <button type="button" className="button" onClick={() => onUse(option.id)}>
+                {de.upload.use}
+              </button>
+            )}
+          </li>
+        ))}
         {stored.map((item) => (
           <li key={item.id}>
             <span>
@@ -364,19 +465,39 @@ function StoredList({ stored, builtinName, activeId, onUse, onDelete }: Omit<Pro
   );
 }
 
-/** The page behind "Daten hochladen": drop a file, map its columns, check the preview, import. */
+/** The page behind "Daten hochladen": drop files, map columns, check the preview, import. */
 export function UploadPage(props: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [upload, setUpload] = useState<UploadResult | null>(null);
+  const [reports, setReports] = useState<ParsedReport[] | null>(null);
   const [saveWarning, setSaveWarning] = useState(false);
 
-  const onFile = useCallback(async (file: File) => {
+  const onFiles = useCallback(async (files: File[]) => {
     setBusy(true);
     setError(null);
     setUpload(null);
+    setReports(null);
     try {
-      setUpload(await readUpload(file));
+      const { results } = await readUploads(files);
+      const extracts = results.filter((r) => r.kind === 'extract');
+      const failed = results.filter((r) => r.kind === 'error');
+      const others = results.filter((r) => r.kind === 'dataset' || r.kind === 'tables');
+
+      if (failed.length > 0) {
+        setError(failed.map((f) => `${f.fileName}: ${f.message}`).join(' · '));
+      }
+      if (extracts.length > 0) {
+        const parsed = extracts.map((e) => parseReport(e.extract, e.fileName));
+        setReports(parsed);
+        return;
+      }
+      if (others.length > 0) {
+        if (others.length > 1) {
+          setError(de.upload.oneAtATime);
+        }
+        setUpload(others[0] as UploadResult);
+      }
     } catch (e) {
       setError(e instanceof UploadError ? e.message : 'Die Datei konnte nicht gelesen werden.');
     } finally {
@@ -387,13 +508,16 @@ export function UploadPage(props: Props) {
   const onImport = async (item: StoredDataset) => {
     const saved = await props.onImport(item);
     setSaveWarning(!saved);
-    if (saved) setUpload(null);
+    if (saved) {
+      setUpload(null);
+      setReports(null);
+    }
   };
 
   return (
     <>
-      <p className="intro">{de.upload.intro}</p>
-      <DropZone onFile={onFile} busy={busy} />
+      <p className="intro">{de.upload.introMulti}</p>
+      <DropZone onFiles={onFiles} busy={busy} />
       {error && (
         <p className="message message--error" role="alert">
           {error}
@@ -404,11 +528,12 @@ export function UploadPage(props: Props) {
           {de.upload.saveFailed}
         </p>
       )}
+      {reports && <ExtractImport reports={reports} onImport={onImport} onCancel={() => setReports(null)} />}
       {upload?.kind === 'tables' && <TableImport upload={upload} onImport={onImport} onCancel={() => setUpload(null)} />}
       {upload?.kind === 'dataset' && <DatasetImport upload={upload} onImport={onImport} onCancel={() => setUpload(null)} />}
       <StoredList
         stored={props.stored}
-        builtinName={props.builtinName}
+        builtinOptions={props.builtinOptions}
         activeId={props.activeId}
         onUse={props.onUse}
         onDelete={props.onDelete}

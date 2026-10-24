@@ -13,6 +13,7 @@ export const de = {
     until ? `Bis ${until} firmierte die Gesellschaft als ${name}` : `Früherer Name: ${name}`,
   loading: 'Daten werden geladen …',
   loadError: 'Die Daten konnten nicht geladen werden.',
+  renderError: 'Die Darstellung dieses Datensatzes ist gescheitert.',
   source: 'Quelle',
   sourceStatus: {
     manualUnverified: 'Manuell erfasst, nicht unabhängig geprüft',
@@ -48,11 +49,20 @@ export const de = {
     back: 'Zurück zum Dashboard',
     intro:
       'CSV-, Excel- (.xlsx) und JSON-Dateien. Die Datei wird nur in Ihrem Browser gelesen und dort gespeichert; es wird nichts übertragen.',
+    introMulti:
+      'CSV-, Excel- (.xlsx) und JSON-Dateien. Mehrere Berichte (eine Datei je Geschäftsjahr) werden zu einem Datensatz zusammengeführt. Alles bleibt in Ihrem Browser; es wird nichts übertragen.',
     dropTitle: 'Datei hierher ziehen',
+    dropTitleMulti: 'Dateien hierher ziehen',
     or: 'oder',
     choose: 'Datei auswählen',
+    chooseMulti: 'Dateien auswählen',
     formats: 'CSV, XLSX, JSON · höchstens 15 MB',
+    formatsMulti: 'CSV, XLSX, JSON · mehrere Dateien möglich · höchstens 15 MB je Datei',
+    oneAtATime:
+      'Tabellen und Datensätze werden einzeln übernommen – bitte nur eine davon auswählen. Berichts-Extrakte dürfen mehrere sein.',
     reading: 'Datei wird gelesen …',
+    reportsFound: (n: number) => (n === 1 ? 'Bericht erkannt' : `${n} Berichte erkannt`),
+    scheduleRows: (n: number) => `${n} Zeilen Anlagespiegel`,
     truncated: 'Die Datei hat sehr viele Zeilen; nur die ersten 50.000 wurden gelesen.',
     stepMapping: 'Spalten zuordnen',
     stepPreview: 'Vorschau',
@@ -263,6 +273,24 @@ export const de = {
       netLoss: 'Jahresfehlbetrag',
     },
     notesTitle: 'Weitere Angaben',
+  },
+
+  anlagespiegel: {
+    title: 'Anlagespiegel',
+    subtitle: 'Entwicklung der Anschaffungs- und Herstellungskosten und der Abschreibungen, Beträge in EUR',
+    groups: {
+      cost: 'Anschaffungs- und Herstellungskosten',
+      accdep: 'Abschreibungen',
+      book: 'Restbuchwerte',
+      other: 'Weitere Spalten',
+    },
+    tilesLabel: 'Kennzahlen des Anlagevermögens',
+    bookValue: 'Restbuchwert',
+    additions: 'Zugänge',
+    depExpense: 'Abschreibung des Geschäftsjahres',
+    missing: 'Für dieses Geschäftsjahr ist kein Anlagespiegel ausgewiesen.',
+    trendTitle: 'Restbuchwert der Hauptposten',
+    trendSubtitle: 'in Mio. €; die senkrechte Linie markiert das gewählte Geschäftsjahr',
   },
 
   footer: {

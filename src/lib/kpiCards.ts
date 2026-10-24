@@ -9,6 +9,7 @@ import {
 import { ExpressionError, parseExpression } from './expression';
 import { evaluateInPeriod } from './formula';
 import {
+  formatByUnit,
   formatEur,
   formatEurMio,
   formatEurRounded,
@@ -262,5 +263,33 @@ export function buildKpiCards(dataset: Dataset, viewId: string, selected?: strin
       delta: buildDelta(spec, value, prior, previousId),
     });
   }
+  // A dataset without the expected keys (another company) falls back to its own
+  // first figures, so the view still shows something.
+  if (cards.length === 0) return genericCards(dataset, viewId, periodId, previousId);
   return cards;
+}
+
+/** Headline cards from the first printed figures of the view's own statements. */
+function genericCards(
+  dataset: Dataset,
+  viewId: string,
+  periodId: string,
+  previousId: string | null,
+): KpiCardModel[] {
+  const view = dataset.views.find((v) => v.id === viewId);
+  const statements = view?.statements ?? [];
+  const facts = dataset.facts.filter((f) => statements.includes(f.statement) && f.values[periodId] != null);
+  return facts.slice(0, 4).map((fact) => {
+    const value = fact.values[periodId] as number;
+    const prior = previousId === null ? null : (fact.values[previousId] ?? null);
+    return {
+      id: fact.key,
+      label: fact.labelDe,
+      value: formatByUnit(value, fact.unit),
+      exact: fact.unit === 'EUR' ? formatEur(value) : null,
+      detail: null,
+      prior: prior !== null && previousId !== null ? `${previousId}: ${formatByUnit(prior, fact.unit)}` : null,
+      delta: null,
+    };
+  });
 }

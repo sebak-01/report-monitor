@@ -32,7 +32,14 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
   - the complete income statement as a table
   - Anhang IV directly below it: Umsatzerlöse by activity (chart and table), domestic/foreign split, items from
     other fiscal years
-- each view shows the plausibility checks that belong to it
+- **Anlagespiegel** (fixed asset schedule of the Anhang) – shown when the dataset has one
+  - the full matrix as printed: columns of the cost roll-forward, the accumulated depreciation and the book
+    values, grouped under their super-headings; zeros omitted in the source are filled in from the roll-forward
+  - Restbuchwert, Zugänge and the year's depreciation as headline figures, a trend of the main items
+  - roll-forward checks (AHK and AfA movements, book value = cost − depreciation) in the check panel
+  - when the source blacks the schedule out (FGK), the view shows the notice instead of the table
+- each view shows the plausibility checks that belong to it; figures a company's layout does not have are left out,
+  sections with no data at all are hidden
 - light and dark mode (follows the OS setting, or set `data-theme="light|dark"` on `<html>`)
 
 ### Upload frame (CSV, XLSX, JSON)
@@ -40,22 +47,28 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
 "Daten hochladen" (`#/upload`) loads your own figures. Everything happens in the browser; the file is never sent
 anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" dropdown appears once something is loaded).
 
-1. Drop or choose a `.csv` (`;` `,` tab or `|`; UTF-8 or Windows-1252), `.xlsx` (every sheet is offered) or `.json`.
-2. A **JSON file in the dataset format** (schema 0.3, or the older 0.2 with a single `source`) is recognized, validated
+1. Drop or choose files: `.csv` (`;` `,` tab or `|`; UTF-8 or Windows-1252), `.xlsx` (every sheet is offered) or `.json`.
+   Several files can be dropped at once.
+2. A **JSON file in the dataset format** (schema 0.4, or the older 0.2/0.3) is recognized, validated
    with its own checks and imported as is. Other JSON (a list of rows, or `{ "Umsatz": { "2023": 1 } }`) is treated
    like a table.
-3. For a **table** the app guesses the header row, the label column and the year columns (headers such as `2023`,
+3. A **report extract** (`{ "source_url": …, "pages": [{ "text": … }] }`, the `*_extracted.json` files of the pilot
+   tooling) is read as the PDF text layer: Bilanz, Gewinn- und Verlustrechnung and the Anlagespiegel are recognised
+   by label, the Anlagespiegel columns by their roll-forward identities. Several extracts (one file per year of the
+   same company) are merged into one multi-year dataset; the report of a year is the reference for that year, its
+   prior-year column fills gaps and differing figures are reported.
+4. For a **table** the app guesses the header row, the label column and the year columns (headers such as `2023`,
    `GJ 2023`) and shows the file excerpt; each guess can be corrected (wide layout: one row per item, one column
    per year; long layout: item / year / value). Unit and number notation (`1.234,56` or `1,234.56`, auto-detected) are
    selectable. Warnings name what was skipped or overwritten; errors block the import.
-4. The result is shown as a generic **Daten** view: first figures with year-on-year change, a chart of up to four
+5. The result is shown as a generic **Daten** view: first figures with year-on-year change, a chart of up to four
    chosen items with a table twin, and the complete table. Uploaded tables have no reconciliation checks.
 
-Limits: 15 MB, 50,000 rows, years only (no quarters), one unit per upload, no `.xls`. The old `.xls` format and PDF
-files are rejected with a message.
+Limits: 15 MB per file, 50,000 rows, years only (no quarters), one unit per table upload, no `.xls`. The old `.xls`
+format and PDF files are rejected with a message.
 
-Not built yet: PDF upload/extraction, analytics, other companies. Anhang I/II (accounting
-methods), Anhang V (management, supervisory board) and the Corporate Governance Bericht are not part of the pilot.
+Not built yet: analytics, Anhang I/II (accounting methods), Anhang V (management, supervisory board) and the
+Corporate Governance Bericht are not part of the pilot.
 
 ## Quick start
 
@@ -68,6 +81,10 @@ npm test           # unit tests (Vitest)
 npm run typecheck  # TypeScript
 npm run build      # type check + production build into dist/
 npm run preview    # serve the production build locally
+
+# rebuild public/data/{ifos,time,fgk-auto}.json from the report extracts
+# (needs the *_extracted.json files in private-data/ and Node.js 22+)
+npm run generate:datasets
 ```
 
 The production build is a static site (relative base path) and can be hosted anywhere.
@@ -92,28 +109,33 @@ the site data or switching browsers or devices means uploading the files again.
 ## Project structure
 
 ```
-public/data/demo.json         invented demo dataset (schema 0.3), bundled
+public/data/demo.json         invented demo dataset (schema 0.4), bundled
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
-src/lib/validate.ts           runs all reconciliation checks; splits the report by view
+src/lib/validate.ts           runs all reconciliation checks; splits the report by view; roll-forward checks of schedules
 src/lib/dataset.ts            runtime shape check, value lookup, period helpers
 src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
 src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
 src/lib/grouped.ts            models for the grouped and the stacked bar charts
-src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json), mapping.ts (table -> dataset),
+src/lib/extract/              report extracts (*_extracted.json) -> dataset: numbers.ts, rows.ts, detect.ts,
+                              statements.ts (Bilanz/GuV by label), anlagespiegel.ts (matrix + roll-forward solver),
+                              buildDataset.ts (one or more reports -> multi-year dataset)
+src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json/extract), mapping.ts (table -> dataset),
                               storage.ts (IndexedDB), renderable.ts (generic view fallback)
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
 src/i18n/de.ts                all user-visible strings that are not part of the data
+scripts/generate-datasets.ts  builds public/data/*.json from the report extracts in private-data/
 src/components/               ViewSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
-                              UploadPage, MappingForm, SourceSelect, GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
-src/views/                    BalanceView, IncomeView, DataView (what each dropdown entry shows)
+                              UploadPage, MappingForm, SourceSelect, ErrorBoundary,
+                              GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
+src/views/                    BalanceView, IncomeView, AnlagespiegelView, DataView (what each dropdown entry shows)
 ```
 
 ## Dataset format
 
-A dataset (schema version 0.3) is one JSON file:
+A dataset (schema version 0.4) is one JSON file:
 
 - `entity`, `sources`: who the figures belong to (incl. `formerNames`) and the report each year comes from
 - `periods`: fiscal years, e.g. `{ "id": "2024", "start": "2024-01-01", "end": "2024-12-31" }`
@@ -133,6 +155,11 @@ A dataset (schema version 0.3) is one JSON file:
   - A value of `null` means "not printed or redacted in the source" and is never treated as zero.
 - `derivedKpis`: formulas over fact keys, e.g. `equity_total / total_assets`. `revenue[prev]` is the value of the
   previous period.
+- `schedules` (optional): reported matrices such as the Anlagespiegel — rows × columns per period. The column
+  `role` (`cost-start`, `additions`, `disposals`, `transfers`, `cost-end`, `accdep-start`, `dep-expense`,
+  `dep-disposals`, `dep-transfers`, `accdep-end`, `write-ups`, `book-value`, `book-value-prior`) names the column
+  for the roll-forward checks; the printed labels differ per company. Rows store one value map per period, keyed by
+  column key. A view lists its schedules in `schedules` beside its `statements`.
 - `checks`: reconciliation rules `lhs = rhs`, each assigned to the `views` in which it is shown, e.g.
   `fixed_assets_total + current_assets_total + prepaid_expenses` = `total_assets`
 - `notes`: remarks from the Anhang that are shown as text, per view
@@ -162,11 +189,11 @@ Each check is evaluated for every period within the tolerance given in `conventi
 ## Roadmap
 
 1. **Display** (this version): Bilanz and GuV views for 2019-2024 with the complete statements, Anhang III/IV, trends, validation.
-2. **Upload frame** (done for CSV, XLSX, JSON): drag and drop, column mapping, preview, stored in the browser only.
-3. **PDF extraction**: coordinate-based table reconstruction (pdf.js), OCR for scanned pages, and a review
-   screen where every recognized value is confirmed against the page image.
-4. **Analytics**: statistical charts and cross-year / cross-company comparisons, probably with DuckDB-WASM.
-5. **Other companies and open data**: discover reports through the metadata of the open data portal
+2. **Upload frame** (done for CSV, XLSX, JSON and report extracts): drag and drop, column mapping, preview, stored in the browser only; several report extracts merge into one multi-year dataset.
+3. **Anlagespiegel** (this version): the fixed asset schedule as a view of its own, read from the report extract or from the dataset's `schedules`.
+4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles beyond the three pilot companies.
+5. **Analytics**: statistical charts and cross-year / cross-company comparisons, probably with DuckDB-WASM.
+6. **Other companies and open data**: discover reports through the metadata of the open data portal
    (DCAT-AP.de), then generalize extraction to arbitrary report layouts.
 
 ## Data source and license
@@ -184,8 +211,10 @@ checks catch typing errors in sums, not wrong values that happen to be consisten
 - The JavaScript bundle is about 750 kB (250 kB gzipped), mostly ECharts. Fine for now; code splitting
   comes with the analytics phase.
 - Which items go into which chart and which KPIs are shown per view is configured in code
-  (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for the pilot, not yet in the dataset.
-- The Anlagenspiegel and the auditor fee are redacted in the published PDF; both are not shown in the dashboard.
+  (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for the pilot, not yet in the dataset; views of a dataset whose keys
+  are unknown fall back to their own first figures and hide sections without data.
+- The Anlagenspiegel and the auditor fee are redacted in the published FGK PDF; both are then not shown in the
+  dashboard. The ifos and TIME reports print the Anlagespiegel in full.
 - The Aktiva and Passiva tables are stacked, not side by side as in the PDF, so that they also work on a phone.
 - The aqua and yellow chart colors have low contrast on the light surface. Every chart therefore has a legend,
   tooltips and a table view with the same numbers.

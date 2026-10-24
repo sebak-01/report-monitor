@@ -3,6 +3,7 @@ import { ViewSelect } from './components/ViewSelect';
 import { de } from './i18n/de';
 import { fetchDataset, previousPeriodId, selectablePeriods, sourceFor } from './lib/dataset';
 import { PeriodSelect } from './components/PeriodSelect';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { SourceSelect } from './components/SourceSelect';
 import { UploadPage } from './components/UploadPage';
 import {
@@ -16,41 +17,44 @@ import {
 import { DataView } from './views/DataView';
 import { reportForView, validateDataset } from './lib/validate';
 import type { Dataset } from './types';
+import { AnlagespiegelView } from './views/AnlagespiegelView';
 import { BalanceView } from './views/BalanceView';
 import type { ViewProps } from './views/common';
 import { IncomeView } from './views/IncomeView';
 
 /**
- * Bundled datasets, first one that loads wins. The pilot dataset is not part of the public
- * repository; demo.json (invented figures) is the fallback that is always there.
+ * Bundled datasets; every file that loads is offered in the "Datenquelle"
+ * dropdown. The pilot dataset is not part of the public repository; demo.json
+ * (invented figures) is the fallback that is always there.
  */
-const DATASET_URLS = ['fgk.json', 'demo.json'].map((name) => `${import.meta.env.BASE_URL}data/${name}`);
+const DATASET_URLS = ['fgk.json', 'fgk-auto.json', 'ifos.json', 'time.json', 'demo.json'].map(
+  (name) => `${import.meta.env.BASE_URL}data/${name}`,
+);
 
-async function loadBundled(): Promise<Dataset> {
-  let lastError: unknown;
-  for (const url of DATASET_URLS) {
-    try {
-      return await fetchDataset(url);
-    } catch (error) {
-      lastError = error; // a missing file (or the HTML a dev server returns for it) falls through to the next one
-    }
-  }
-  throw lastError;
+async function loadBundled(): Promise<Dataset[]> {
+  const loaded = await Promise.all(DATASET_URLS.map((url) => fetchDataset(url).catch(() => null)));
+  const datasets = loaded.filter((d): d is Dataset => d !== null);
+  return datasets.length > 0 ? datasets : [];
 }
 
 /** The component that renders each view id of the dataset. */
 const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
   balance: BalanceView,
   income: IncomeView,
+  anlagespiegel: AnlagespiegelView,
   data: DataView,
 };
 
 const BUILTIN = 'builtin';
 
+/** Bundled datasets are addressed as "builtin:0", "builtin:1", … */
+const builtinId = (index: number) => `${BUILTIN}:${index}`;
+const isBuiltinId = (id: string) => id === BUILTIN || id.startsWith(`${BUILTIN}:`);
+
 type State =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; dataset: Dataset };
+  | { status: 'ready'; datasets: Dataset[] };
 
 /** The selected view and year live in the URL hash (#/balance/2024), so a page can be linked and reloaded. */
 function readHash(viewIds: string[], periodIds: string[]): { view: string; period: string } {
@@ -98,7 +102,14 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     loadBundled().then(
-      (dataset) => !cancelled && setState({ status: 'ready', dataset }),
+      (datasets) => {
+        if (cancelled) return;
+        if (datasets.length === 0) {
+          setState({ status: 'error', message: 'Keine mitgelieferten Daten geladen.' });
+        } else {
+          setState({ status: 'ready', datasets });
+        }
+      },
       (error: unknown) =>
         !cancelled &&
         setState({ status: 'error', message: error instanceof Error ? error.message : String(error) }),
@@ -114,15 +125,17 @@ export default function App() {
     };
   }, []);
 
-  const builtin = state.status === 'ready' ? state.dataset : null;
-  const active = activeId === BUILTIN ? null : (stored.find((item) => item.id === activeId) ?? null);
+  const bundled = state.status === 'ready' ? state.datasets : [];
+  const builtinIndex = isBuiltinId(activeId) ? Math.max(0, Number(activeId.split(':')[1] ?? 0)) : -1;
+  const builtin = builtinIndex >= 0 ? bundled[builtinIndex] ?? null : null;
+  const active = isBuiltinId(activeId) ? null : (stored.find((item) => item.id === activeId) ?? null);
   // A remembered upload that no longer exists falls back to the bundled data.
-  const dataset = active ? active.dataset : builtin;
-  const effectiveId = active ? active.id : BUILTIN;
+  const dataset = active ? active.dataset : builtin ?? bundled[0] ?? null;
+  const effectiveId = active ? active.id : builtin ? builtinId(bundled.indexOf(builtin)) : BUILTIN;
 
   const use = useCallback((id: string) => {
     setActiveId(id);
-    writeActiveSource(id === BUILTIN ? null : id);
+    writeActiveSource(isBuiltinId(id) ? null : id);
   }, []);
 
   const importDataset = useCallback(
@@ -162,7 +175,7 @@ export default function App() {
         <main>
           <UploadPage
             stored={stored}
-            builtinName={builtin?.entity.name ?? de.upload.builtin}
+            builtinOptions={bundled.map((d, i) => ({ id: builtinId(i), name: d.entity.name }))}
             activeId={effectiveId}
             onImport={importDataset}
             onUse={use}
@@ -193,18 +206,19 @@ export default function App() {
       </main>
     );
   }
-  const sourceOptions =
-    stored.length > 0
-      ? [...(builtin ? [{ id: BUILTIN, name: builtin.entity.name }] : []), ...stored.map((i) => ({ id: i.id, name: i.name }))]
-      : [];
+  const sourceOptions = [
+    ...bundled.map((d, i) => ({ id: builtinId(i), name: d.entity.name })),
+    ...stored.map((i) => ({ id: i.id, name: i.name })),
+  ];
   return (
-    <Dashboard
-      key={effectiveId}
-      dataset={dataset}
-      sourceOptions={sourceOptions}
-      sourceId={effectiveId}
-      onSourceChange={use}
-    />
+    <ErrorBoundary key={effectiveId}>
+      <Dashboard
+        dataset={dataset}
+        sourceOptions={sourceOptions.length > 1 ? sourceOptions : []}
+        sourceId={effectiveId}
+        onSourceChange={use}
+      />
+    </ErrorBoundary>
   );
 }
 
