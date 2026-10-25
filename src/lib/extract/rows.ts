@@ -23,7 +23,7 @@ import { amountSpans } from './numbers';
  * and a mark must be followed by a letter so that "I. + II." stays one label.
  */
 const LABEL_START =
-  /(?:^|\s)(?:(?:[IVX]{1,5}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|-\s*davon\s*|davon\s+)/;
+  /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|-\s*davon\s*|davon\s+)/;
 /** Page footers that PDF text layers append to the last row of a table. */
 const FOOTER = /\s*(?:Anlage\s*\d+\s*\/\s*)?Seite\s*\d+\s*$/i;
 const UNIT_ROW = /^(?:eur|euro|t€|teur)(?:\s+(?:eur|euro|t€|teur))*$/i;

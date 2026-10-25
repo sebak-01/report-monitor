@@ -57,7 +57,7 @@ export function parseReport(extract: ReportExtract, fileName: string): ParsedRep
         schedule = { ...schedule, rows: schedule.rows.map((r) => ({ ...r, values: {} })) };
       } else {
         // The book values of the schedule are the balance-sheet line items.
-        backfillFromSchedule(statements.facts, schedule, meta.periodId);
+        backfillFromSchedule(statements.facts, schedule, meta.periodId, warnings);
       }
     }
 
@@ -77,7 +77,7 @@ export function parseReport(extract: ReportExtract, fileName: string): ParsedRep
  * the Bilanz shows as its Anlagevermögen lines. Figures the statement matcher
  * could not read (wrapped labels, two columns on one line) are taken from there.
  */
-function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: string): void {
+function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: string, warnings: string[]): void {
   const byKey = new Map(facts.map((f) => [f.key, f]));
   const rows = schedule.rows;
   const findRow = (pattern: RegExp) => rows.find((r) => pattern.test(r.labelDe));
@@ -103,9 +103,13 @@ function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: strin
   for (const { key, row } of table) {
     const value = book(findRow(row));
     if (value === null || value === undefined) continue;
+    if (Math.abs(value) > 1e10) continue; // implausible cell (OCR garbage)
     const fact = byKey.get(key);
     if (fact) {
-      if (fact.values[periodId] === undefined || fact.values[periodId] === null) fact.values[periodId] = value;
+      if (fact.values[periodId] === undefined || fact.values[periodId] === null) {
+        fact.values[periodId] = value;
+        warnings.push(`„${fact.labelDe}": ${periodId} aus dem Anlagespiegel übernommen.`);
+      }
     } else {
       facts.push({
         key,
@@ -114,6 +118,7 @@ function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: strin
         unit: 'EUR',
         values: { [periodId]: value },
       });
+      warnings.push(`„${key}": ${periodId} aus dem Anlagespiegel übernommen.`);
     }
   }
 }

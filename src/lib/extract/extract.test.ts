@@ -153,6 +153,86 @@ describe('statements', () => {
     expect(value('cash')).toBe(406581.88);
     expect(value('trade_payables')).toBe(147010.46);
   });
+
+  it('leaves a side-by-side label empty instead of borrowing another row\'s amounts', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'BILANZ zum 31.12.2023\nMuster Technik GmbH, Musterstadt\nAKTIVA PASSIVA\n' +
+          'I. Immaterielle Vermögensgegenstände I. Gezeichnetes Kapital\n' +
+          'Entgeltlich erworbene Konzessionen, gewerbliche Schutzrechte und ähnliche Il. Kapitalrücklage\n' +
+          'Rechte und Werte sowie Lizenzen an solchen Rechten und Werten 94.375,00 109.198,00\n' +
+          'Die Kapitalrücklage entwickelte sich im Geschäftsjahr 2023 wie folgt:\n' +
+          'Anfangsbestand 3.086.180,33 3.230.180,33\n',
+      },
+    ];
+    const { facts, warnings } = parseStatements(pages, '2023', '2022');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2023'];
+    expect(value('intangible_assets')).toBe(94375);
+    // The Passiva labels sit in the right column without amounts of their own –
+    // the amounts of the Lizenzen row and the roll-forward table are not theirs.
+    expect(value('subscribed_capital')).toBeUndefined();
+    expect(value('capital_reserve')).toBeUndefined();
+    expect(warnings.join(' ')).toMatch(/nicht zuordenbar/);
+  });
+
+  it('reads a label that wraps over two lines', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'AKTIVA\n' +
+          '1. Grundstücke, grundstücksgleiche Rechte und Bauten einschließlich der Bauten\n' +
+          'auf fremden Grundstücken 5.845.890,22 6.002.308,22\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2023', '2022');
+    expect(facts.find((f) => f.key === 'land_buildings')?.values['2023']).toBe(5845890.22);
+  });
+
+  it('sums a group total from items that are only found later', () => {
+    // No "Summe Anlagevermögen" printed: it must become intangible + tangible,
+    // even when the tangible total is itself a sum of items found afterwards.
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'AKTIVA\n' +
+          'I. Immaterielle Vermögensgegenstände 94.375,00 109.198,00\n' +
+          'II. Sachanlagen\n' +
+          '1. Grundstücke, grundstücksgleiche Rechte und Bauten einschließlich der Bauten auf fremden Grundstücken 5.845.890,22 6.002.308,22\n' +
+          '2. Technische Anlagen und Maschinen 2.279.073,33 1.408.290,78\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2023', '2022');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2023'];
+    expect(value('intangible_assets')).toBe(94375);
+    expect(value('tangible_assets_total')).toBeCloseTo(5845890.22 + 2279073.33, 2);
+    expect(value('fixed_assets_total')).toBeCloseTo(94375 + 5845890.22 + 2279073.33, 2);
+  });
+
+  it('drops an implausible balance-sheet total', () => {
+    const pages = [{ page_number: 1, text: 'AKTIVA\n-1.345.583,90 -1.000.000,00\n' }];
+    const { facts, warnings } = parseStatements(pages, '2023', '2022');
+    expect(facts.find((f) => f.key === 'total_assets')).toBeUndefined();
+    expect(warnings.join(' ')).toMatch(/Bilanzsumme.*unplausibel/);
+  });
+
+  it('warns when one amount is read for several figures', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'AKTIVA\n' +
+          'I. Vorräte 100,00 50,00\n' +
+          'II. Forderungen und sonstige Vermögensgegenstände 100,00 50,00\n' +
+          'III. Kassenbestand, Bundesbankguthaben 100,00 50,00\n',
+      },
+    ];
+    const { warnings } = parseStatements(pages, '2023', '2022');
+    expect(warnings.join(' ')).toMatch(/Gleicher Betrag/);
+  });
 });
 
 describe('buildDataset', () => {

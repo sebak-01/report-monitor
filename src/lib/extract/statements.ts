@@ -125,7 +125,12 @@ export function statementPages(pages: { page_number: number; text: string }[]): 
   );
 }
 
-const LABEL_MARK = /(?:^|\s)(?:(?:[IVX]{1,5}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
+/** "1.", "II.", "a)", "Summe " – a new row starts here. OCR misreads roman numerals ("Il.", "Ill."). */
+const LABEL_MARK = /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
+
+/** Narrative lines ("…entwickelte sich im Geschäftsjahr …") are no rows and borrow no amounts. */
+const NARRATIVE =
+  /\b(sich|wie\s+folgt|werden|wird|wurde|wurden|ist|sind|ergibt|ergeben|erfolgt|entwickelt|entwickelte|beträgt|angesetzt|vorgenommen|dargestellt|ausgewiesen|bezeichnet|korrespondierend)\b|[:;?!]\s*$/i;
 
 /** Amounts after `at`, cut off at the next label mark (two statements on one line). */
 function amountsAfter(line: string, at: number): number[] {
@@ -133,6 +138,35 @@ function amountsAfter(line: string, at: number): number[] {
   const next = LABEL_MARK.exec(rest);
   const cut = next ? next.index : rest.length;
   return [...amountSpans(rest.slice(0, cut))].map((s) => s.value);
+}
+
+function labelMarkCount(text: string): number {
+  return [...text.matchAll(new RegExp(LABEL_MARK.source, 'g'))].length;
+}
+
+function numbersInLine(text: string): boolean {
+  return [...amountSpans(text)].length > 0;
+}
+
+/**
+ * True when `at` sits in the line's own label. Two statements side by side
+ * (Aktiva | Passiva) put a second label on the same line – the amounts of the
+ * first one are then not the ones printed behind the second.
+ */
+function isFirstLabel(text: string, at: number): boolean {
+  const head = text.slice(0, at).replace(/^\s*(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*/, '');
+  return !LABEL_MARK.test(head);
+}
+
+/** Amounts of a label that wraps over the following lines ("…, gewerb-" / "liche …"). */
+function gatherAmounts(lines: Line[], from: number): number[] {
+  const gathered: number[] = [];
+  for (let j = from; j < lines.length && j < from + 3; j += 1) {
+    if (LABEL_MARK.test(lines[j].text)) break;
+    gathered.push(...[...amountSpans(lines[j].text)].map((s) => s.value));
+    if (gathered.length >= 2) break;
+  }
+  return gathered;
 }
 
 /** A line of only amounts and punctuation ("3.712.510,40 3.824.054,68"). */
@@ -189,49 +223,67 @@ export function parseStatements(
       let hit = false;
       for (let i = 0; i < lines.length && !hit; i += 1) {
         if (!nearAnchor(i)) continue;
-        const match = pattern.exec(lines[i].text);
-        if (!match) continue;
-        const numbers = amountsAfter(lines[i].text, match.index + match[0].length);
-        let values = numbers.length > 0 ? pair(numbers) : null;
-        if (!values && numbers.length === 1) {
-          // A wrapped label splits its two amounts over two lines: the current
-          // amount sits on the line where the label ends, the prior on the line
-          // where it starts. An explicit "(Vorjahr: …)" line is the exception.
-          const next = i + 1 < lines.length ? lines[i + 1].text : null;
-          const prev = i > 0 ? lines[i - 1].text : null;
-          const nextAmounts = next ? [...amountSpans(next)].map((s) => s.value) : [];
-          const prevAmounts = prev ? [...amountSpans(prev)].map((s) => s.value) : [];
-          if (next && /vorjahr/i.test(next) && nextAmounts.length === 1) {
-            values = [numbers[0], nextAmounts[0]];
-          } else if (next && nextAmounts.length === 1 && !LABEL_MARK.test(next)) {
-            values = [nextAmounts[0], numbers[0]];
-          } else if (prev && prevAmounts.length === 1 && !LABEL_MARK.test(labelOf(lines[i].text))) {
-            values = [numbers[0], prevAmounts[0]];
+        // The line alone first, then joined with the next one: labels wrap.
+        const spans: { text: string; endLine: number }[] = [{ text: lines[i].text, endLine: i }];
+        if (i + 1 < lines.length) spans.push({ text: `${lines[i].text} ${lines[i + 1].text}`, endLine: i + 1 });
+        for (const span of spans) {
+          const match = pattern.exec(span.text);
+          if (!match) continue;
+          // A match that starts in the next line gets its own turn there – the
+          // line context (own label, amounts) would be the wrong one here.
+          if (span.endLine !== i && match.index >= lines[i].text.length) continue;
+          const matchEnd = match.index + match[0].length;
+          const own = isFirstLabel(lines[i].text, match.index) && !LABEL_MARK.test(span.text.slice(matchEnd));
+          const narrative = NARRATIVE.test(lines[i].text);
+          let numbers = amountsAfter(span.text, matchEnd);
+          if (span.endLine !== i && (!own || narrative)) {
+            // Amounts behind the line boundary belong to the wrapped label of
+            // the other column, or to the row a narrative line announces.
+            numbers = amountsAfter(lines[i].text, matchEnd);
           }
+          let values = numbers.length > 0 ? pair(numbers) : null;
+          if (!values && numbers.length === 1 && span.endLine === i) {
+            // A wrapped label splits its two amounts over two lines: the current
+            // amount sits on the line where the label ends, the prior on the line
+            // where it starts. An explicit "(Vorjahr: …)" line is the exception.
+            const next = i + 1 < lines.length ? lines[i + 1].text : null;
+            const prev = i > 0 ? lines[i - 1].text : null;
+            const nextAmounts = next ? [...amountSpans(next)].map((s) => s.value) : [];
+            const prevAmounts = prev ? [...amountSpans(prev)].map((s) => s.value) : [];
+            if (next && /vorjahr/i.test(next) && nextAmounts.length === 1) {
+              values = [numbers[0], nextAmounts[0]];
+            } else if (next && nextAmounts.length === 1 && !LABEL_MARK.test(next)) {
+              values = [nextAmounts[0], numbers[0]];
+            } else if (prev && prevAmounts.length === 1 && !LABEL_MARK.test(labelOf(lines[i].text))) {
+              values = [numbers[0], prevAmounts[0]];
+            }
+          }
+          if (!values && numbers.length === 0) {
+            // The label wraps before its amounts ("…, gewerb-" / "liche …"). Only
+            // the line's own label may gather them; behind a second statement the
+            // amounts belong to that statement, and narrative lines borrow none.
+            if (own && !narrative) {
+              const gathered = gatherAmounts(lines, span.endLine + 1);
+              if (gathered.length > 0) {
+                numbers.push(...gathered);
+                values = pair(numbers);
+              }
+            } else if (!narrative && (labelMarkCount(lines[i].text) >= 2 || numbersInLine(lines[i].text))) {
+              warnings.push(`„${spec.labelDe}": Beträge nicht zuordenbar (zwei Positionen in einer Zeile) – Wert fehlt.`);
+            }
+          }
+          if (!values) {
+            if (numbers.length > 0) {
+              warnings.push(`„${spec.labelDe}": ${numbers.length} Beträge, erwartet werden zwei (Jahr, Vorjahr).`);
+            }
+            continue;
+          }
+          const label = labelOf(span.text);
+          found.set(spec.key, spec.result ? normalizeResult(label, values) : values);
+          for (let k = i; k <= span.endLine; k += 1) usedLabels.add(lines[k].text.trim());
+          hit = true;
+          break;
         }
-        if (!values && numbers.length === 0) {
-          // The label wraps before its amounts ("…, gewerb-" / "liche …").
-          const gathered: number[] = [];
-          for (let j = i + 1; j < lines.length && j <= i + 3; j += 1) {
-            if (LABEL_MARK.test(lines[j].text)) break;
-            gathered.push(...[...amountSpans(lines[j].text)].map((s) => s.value));
-            if (gathered.length >= 2) break;
-          }
-          if (gathered.length > 0) {
-            numbers.push(...gathered);
-            values = pair(numbers);
-          }
-        }
-        if (!values) {
-          if (numbers.length > 0) {
-            warnings.push(`„${spec.labelDe}": ${numbers.length} Beträge, erwartet werden zwei (Jahr, Vorjahr).`);
-          }
-          continue;
-        }
-        const label = labelOf(lines[i].text);
-        found.set(spec.key, spec.result ? normalizeResult(label, values) : values);
-        usedLabels.add(lines[i].text.trim());
-        hit = true;
       }
       if (hit) break;
     }
@@ -286,22 +338,73 @@ export function parseStatements(
     usedLabels.add(last.text.trim());
   }
 
+  // Implausible figures are dropped instead of silently trusted: unreadable
+  // amounts (OCR garbage), a balance-sheet total below zero, or a printed total
+  // smaller than its own items (the number came from the wrong row).
+  const labelOfKey = (key: string) => FACT_SPECS.find((s) => s.key === key)?.labelDe ?? key;
+  for (const [key, v] of [...found]) {
+    if (Math.abs(v[0]) > 1e11 || Math.abs(v[1]) > 1e11) {
+      found.delete(key);
+      warnings.push(`„${labelOfKey(key)}": Betrag nicht lesbar (wahrscheinlich OCR-Fehler) – Wert fehlt.`);
+    }
+  }
+  for (const key of ['total_assets', 'total_equity_and_liabilities']) {
+    const v = found.get(key);
+    if (v && v[0] <= 0) {
+      found.delete(key);
+      warnings.push(`„Bilanzsumme": unplausibel (${v[0]}) – Wert fehlt.`);
+    }
+  }
+  for (const spec of FACT_SPECS) {
+    const v = found.get(spec.key);
+    if (!v || !spec.sumOf?.length) continue;
+    const parts = spec.sumOf.map((k) => found.get(k));
+    if (parts.every((p) => !p)) continue;
+    const sums: [number, number] = [
+      parts.reduce((s, p) => s + (p ? p[0] : 0), 0),
+      parts.reduce((s, p) => s + (p ? p[1] : 0), 0),
+    ];
+    if (sums.some((s, idx) => Math.abs(s) > 0.005 && v[idx] < s - 0.05)) {
+      found.delete(spec.key);
+      warnings.push(`„${spec.labelDe}": ausgewiesene Summe kleiner als ihre Teile – neu berechnet.`);
+    }
+  }
+
   // Group totals the report prints as bare amount lines, summed from their items.
-  // Items a layout does not have count as 0; totals are built bottom-up, so the
-  // pass repeats until nothing changes.
-  for (let pass = 0; pass < 4; pass += 1) {
+  // Items a layout does not have count as 0; derived totals are recomputed every
+  // pass until stable, so a parent is never frozen while its items are missing.
+  const printed = new Set(found.keys());
+  for (let pass = 0; pass < 8; pass += 1) {
     let changed = false;
     for (const spec of FACT_SPECS) {
-      if (found.has(spec.key) || !spec.sumOf?.length) continue;
+      if (!spec.sumOf?.length) continue;
+      if (printed.has(spec.key) && found.has(spec.key)) continue;
       const parts = spec.sumOf.map((k) => found.get(k));
       if (parts.every((p) => !p)) continue;
-      found.set(spec.key, [
+      const sum: [number, number] = [
         parts.reduce((s, p) => s + (p ? p[0] : 0), 0),
         parts.reduce((s, p) => s + (p ? p[1] : 0), 0),
-      ]);
+      ];
+      const prev = found.get(spec.key);
+      if (prev && Math.abs(prev[0] - sum[0]) < 0.005 && Math.abs(prev[1] - sum[1]) < 0.005) continue;
+      found.set(spec.key, sum);
       changed = true;
     }
     if (!changed) break;
+  }
+
+  // The same amount read for several figures is the signature of a misassignment.
+  const byValue = new Map<string, string[]>();
+  for (const [key, v] of found) {
+    if (Math.abs(v[0]) < 0.005) continue;
+    byValue.set(String(v[0]), [...(byValue.get(String(v[0])) ?? []), key]);
+  }
+  for (const [value, keys] of byValue) {
+    if (keys.length >= 3) {
+      warnings.push(
+        `Gleicher Betrag (${Number(value).toLocaleString('de-DE', { minimumFractionDigits: 2 })}) für ${keys.length} Positionen gelesen – vermutlich falsch zugeordnet (${keys.join(', ')}).`,
+      );
+    }
   }
 
   const facts: Fact[] = [];
@@ -328,5 +431,5 @@ export function parseStatements(
     if (label.length > 2) unmatched.push(label);
   }
 
-  return { facts, warnings, unmatched: [...new Set(unmatched)].slice(0, 20) };
+  return { facts, warnings: [...new Set(warnings)], unmatched: [...new Set(unmatched)].slice(0, 20) };
 }

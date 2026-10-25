@@ -70,6 +70,9 @@ function main(): void {
     for (const result of report.results.filter((r) => r.status === 'fail')) {
       console.log(`   ✗ ${result.labelDe} (${result.period}): ${result.reason?.detail ?? ''}`);
     }
+    for (const parsed of reports) {
+      for (const warning of parsed.warnings) console.log(`   ! ${parsed.fileName}: ${warning}`);
+    }
     for (const warning of warnings) console.log(`   ! ${warning}`);
   }
 }

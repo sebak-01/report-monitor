@@ -458,7 +458,14 @@ function ExtractImport({
       )}
       <MergeTargetPicker candidates={candidates} target={target} onPick={pick} />
       <DuplicateWarning duplicate={duplicate} />
-      <Messages title={de.upload.warnings} items={result.warnings} tone="warn" />
+      <Messages
+        title={de.upload.warnings}
+        items={[
+          ...reports.flatMap((r) => r.warnings.map((w) => `${r.meta.periodId}: ${w}`)),
+          ...result.warnings,
+        ]}
+        tone="warn"
+      />
       {dataset && (
         <>
           <p>
