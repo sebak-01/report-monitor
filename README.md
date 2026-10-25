@@ -5,14 +5,14 @@
 A local-first, browser-only dashboard for the key figures of companies, starting with state-owned
 enterprises such as research institutes. The UI is in German; code and documentation are in English.
 
-**Pilot:** annual accounts of state-owned research institutes, published as PDFs on a government open data
-portal. **No data is part of this repository** – without an uploaded dataset the dashboard shows the full
-statement structure with every figure as "–", and you load your own files through "Daten hochladen".
+**Pilot:** annual accounts published as PDFs on a government open data portal. **No data is part of this
+repository** – without an uploaded dataset the dashboard shows the full statement structure with every figure
+as "–", and you load your own files through "Daten hochladen".
 
 ## Status
 
-Phase 1 (display) and the upload frame. With the pilot dataset, two dropdowns in the upper right select the view and the fiscal year (2019–2024; 2018 appears
-as the comparison year of the 2019 report). Both are kept in the URL (`#/balance/2021`, `#/income/2024`).
+Phase 1 (display) and the upload frame. With a loaded dataset, two dropdowns in the upper right select the view
+and the fiscal year. Both are kept in the URL (`#/balance/2021`, `#/income/2024`).
 Each view has a multi-year trend chart with a table twin.
 
 Companies that changed their name can store earlier names in `entity.formerNames`; the dashboard always shows
@@ -37,7 +37,7 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
     values, grouped under their super-headings; zeros omitted in the source are filled in from the roll-forward
   - Restbuchwert, Zugänge and the year's depreciation as headline figures, a trend of the main items
   - roll-forward checks (AHK and AfA movements, book value = cost − depreciation) in the check panel
-  - when the source blacks the schedule out (FGK), the view shows the notice instead of the table
+  - when the source blacks the schedule out, the view shows the notice instead of the table
 - each view shows the plausibility checks that belong to it; figures a company's layout does not have are left out,
   sections with no data at all are hidden
 - light and dark mode (follows the OS setting, or set `data-theme="light|dark"` on `<html>`)
@@ -52,8 +52,8 @@ anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" drop
 2. A **JSON file in the dataset format** (schema 0.4, or the older 0.2/0.3) is recognized, validated
    with its own checks and imported as is. Other JSON (a list of rows, or `{ "Umsatz": { "2023": 1 } }`) is treated
    like a table.
-3. A **report extract** (`{ "source_url": …, "pages": [{ "text": … }] }`, the `*_extracted.json` files of the pilot
-   tooling) is read as the PDF text layer: Bilanz, Gewinn- und Verlustrechnung and the Anlagespiegel are recognised
+3. A **report extract** (`{ "source_url": …, "pages": [{ "text": … }] }`, the `*_extracted.json` files of the
+   extraction tooling) is read as the PDF text layer: Bilanz, Gewinn- und Verlustrechnung and the Anlagespiegel are recognised
    by label, the Anlagespiegel columns by their roll-forward identities. Several extracts (one file per year of the
    same company) are merged into one multi-year dataset; the report of a year is the reference for that year, its
    prior-year column fills gaps and differing figures are reported.
@@ -68,7 +68,7 @@ Limits: 15 MB per file, 50,000 rows, years only (no quarters), one unit per tabl
 format and PDF files are rejected with a message.
 
 Not built yet: analytics, Anhang I/II (accounting methods), Anhang V (management, supervisory board) and the
-Corporate Governance Bericht are not part of the pilot.
+Corporate Governance Bericht.
 
 ## Quick start
 
@@ -82,7 +82,7 @@ npm run typecheck  # TypeScript
 npm run build      # type check + production build into dist/
 npm run preview    # serve the production build locally
 
-# build data/*.json from the report extracts in private-data/ (Node.js 22+);
+# build data/*.json from the report extracts in data/single-data/ (Node.js 22+);
 # the files are git-ignored and loaded per upload in the dashboard
 npm run generate:datasets
 ```
@@ -110,6 +110,7 @@ the site data or switching browsers or devices means uploading the files again.
 
 ```
 data/                        datasets you generated (git-ignored) – load them per upload
+data/single-data/            report extracts (*_extracted.json), one folder per company
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
@@ -127,7 +128,7 @@ src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
 src/i18n/de.ts                all user-visible strings that are not part of the data
-scripts/generate-datasets.ts  builds data/*.json from the report extracts in private-data/
+scripts/generate-datasets.ts  builds data/*.json from the report extracts in data/single-data/
 src/components/               ViewSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
                               UploadPage, MappingForm, SourceSelect, ErrorBoundary,
                               GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
@@ -189,21 +190,19 @@ Each check is evaluated for every period within the tolerance given in `conventi
 
 ## Roadmap
 
-1. **Display** (this version): Bilanz and GuV views for 2019-2024 with the complete statements, Anhang III/IV, trends, validation.
+1. **Display** (this version): Bilanz and GuV views with the complete statements, Anhang III/IV, trends, validation.
 2. **Upload frame** (done for CSV, XLSX, JSON and report extracts): drag and drop, column mapping, preview, stored in the browser only; several report extracts merge into one multi-year dataset.
 3. **Anlagespiegel** (this version): the fixed asset schedule as a view of its own, read from the report extract or from the dataset's `schedules`.
-4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles beyond the three pilot companies.
+4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles.
 5. **Analytics**: statistical charts and cross-year / cross-company comparisons, probably with DuckDB-WASM.
 6. **Other companies and open data**: discover reports through the metadata of the open data portal
    (DCAT-AP.de), then generalize extraction to arbitrary report layouts.
 
 ## Data source and license
 
-No data is distributed with this repository. The pilot sources are the annual accounts (balance sheet, income
-statement, notes) of three state-owned research institutes, published as PDFs on a government open data portal
-under the *Datenlizenz Deutschland - Namensnennung - Version 2.0*. The license requires attribution (source,
-license, link, and a note on changes) – add the full attribution to the footer before a dashboard with real
-figures is published.
+No data is distributed with this repository. The figures you load come from annual accounts published as PDFs
+on open data portals, each under its own license – check the terms and add the required attribution (source,
+license, link, and a note on changes) to the footer before a dashboard with real figures is published.
 
 Figures are read from the PDF text layers (OCR where scanned) and are not independently verified. The
 reconciliation checks catch typing errors in sums, not wrong values that happen to be consistent.
@@ -213,18 +212,9 @@ reconciliation checks catch typing errors in sums, not wrong values that happen 
 - The JavaScript bundle is about 750 kB (250 kB gzipped), mostly ECharts. Fine for now; code splitting
   comes with the analytics phase.
 - Which items go into which chart and which KPIs are shown per view is configured in code
-  (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for the pilot, not yet in the dataset; views of a dataset whose keys
+  (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for now, not yet in the dataset; views of a dataset whose keys
   are unknown fall back to their own first figures and hide sections without data.
-- The Anlagenspiegel and the auditor fee are redacted in the published FGK PDF; both are then not shown in the
-  dashboard. The ifos and TIME reports print the Anlagespiegel in full.
 - The Aktiva and Passiva tables are stacked, not side by side as in the PDF, so that they also work on a phone.
 - The aqua and yellow chart colors have low contrast on the light surface. Every chart therefore has a legend,
   tooltips and a table view with the same numbers.
 
-## Data quality
-
-The figures of 2019-2022 were read from the PDF text layers (OCR where scanned) and partly entered by hand; they
-are cross-checked by the reconciliation checks and by comparing prior-year columns of consecutive reports, but not
-independently verified. Known gaps: the Anlagenspiegel page is missing from the 2019-2022 PDFs and redacted in 2024;
-the 2020 report states a 100 % domestic revenue share while the 2021 report gives 91 / 9 % for 2020 (own-report value
-kept, noted in the dataset); headcount for 2018/2019 is unknown.

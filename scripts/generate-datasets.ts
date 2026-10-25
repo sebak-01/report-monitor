@@ -1,7 +1,7 @@
 /**
- * Builds data/*.json from the report extracts in private-data/.
+ * Builds data/*.json from the report extracts in data/single-data/.
  *
- *   node --experimental-transform-types scripts/generate-datasets.ts private-data data
+ *   node --experimental-transform-types scripts/generate-datasets.ts data/single-data/
  *
  * The output is git-ignored and never part of the build; load the files through
  * "Daten hochladen" in the dashboard. One dataset per company folder (FGK,
@@ -21,7 +21,7 @@ const { buildDataset, parseReport } = await import('../src/lib/extract/buildData
 const { looksLikeExtract } = await import('../src/lib/extract/detect.ts');
 const { validateDataset } = await import('../src/lib/validate.ts');
 
-const [, , sourceDir = 'private-data', outDir = 'data'] = process.argv;
+const [, , sourceDir = 'data/single-data', outDir = 'data'] = process.argv;
 
 const OUT_NAME: Record<string, string> = {
   // The curated pilot dataset fgk.json is the one to load; the auto-extract is

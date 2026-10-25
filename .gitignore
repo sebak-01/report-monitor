@@ -8,7 +8,7 @@ dist
 data/
 public/data/
 *_extracted.json
-private-data/
+README.local.md
 tools/base/
 tools/build_dataset.py
 tools/extract_statements.py
