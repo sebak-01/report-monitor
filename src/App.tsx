@@ -101,7 +101,8 @@ export default function App() {
   const importDataset = useCallback(
     async (item: StoredDataset) => {
       const saved = await saveStored(item);
-      setStored((current) => [item, ...current]);
+      // A merged upload reuses the id of the dataset it belongs to: replace, do not duplicate.
+      setStored((current) => [item, ...current.filter((c) => c.id !== item.id)]);
       use(item.id);
       const periods = selectablePeriods(item.dataset);
       const view = item.dataset.views.find((v) => VIEW_COMPONENTS[v.id]);

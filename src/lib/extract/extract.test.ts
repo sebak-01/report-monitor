@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAnlagespiegel, solveRow, findAnlagespiegelPage } from './anlagespiegel';
-import { buildDataset, parseReport } from './buildDataset';
+import { buildDataset, combineReports, parseReport } from './buildDataset';
 import { looksLikeExtract, readReportMeta } from './detect';
 import { numbersIn, pair } from './numbers';
 import { parseStatements } from './statements';
@@ -207,5 +207,27 @@ describe('buildDataset', () => {
     // The report of the year itself is the reference for that year.
     expect(revenue!.values['2023']).toBe(95);
     expect(warnings.join(' ')).toMatch(/Abweichung|weicht ab/);
+  });
+
+  it('merges reports uploaded one after another like a single drop', () => {
+    const a = parseReport(extractOf('2024', 100, 90, 500), 'y2024_extracted.json');
+    const b = parseReport(extractOf('2023', 90, 80, 550), 'y2023_extracted.json');
+    // First the 2023 report alone, later the 2024 one on top of it.
+    const merged = buildDataset(combineReports([b], [a]));
+    const atOnce = buildDataset([b, a]);
+    expect(merged.dataset.periods.map((p) => p.id)).toEqual(atOnce.dataset.periods.map((p) => p.id));
+    const values = (ds: typeof merged.dataset) => ds.facts.find((f) => f.key === 'revenue')!.values;
+    expect(values(merged.dataset)).toEqual(values(atOnce.dataset));
+    expect(merged.dataset.sources.map((s) => s.period)).toEqual(atOnce.dataset.sources.map((s) => s.period));
+  });
+
+  it('replaces the stored report when the same year is uploaded again', () => {
+    const old = parseReport(extractOf('2024', 100, 90, 500), 'y2024_extracted.json');
+    const fresh = parseReport(extractOf('2024', 120, 90, 500), 'y2024_extracted.json');
+    const b = parseReport(extractOf('2023', 90, 80, 550), 'y2023_extracted.json');
+    expect(combineReports([b, old], [fresh])).toEqual([b, fresh]);
+    const { dataset } = buildDataset(combineReports([b, old], [fresh]));
+    const revenue = dataset.facts.find((f) => f.key === 'revenue')!;
+    expect(revenue.values['2024']).toBe(120);
   });
 });

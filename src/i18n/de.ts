@@ -95,7 +95,15 @@ export const de = {
     warnings: 'Hinweise',
     errors: 'Das lässt sich so noch nicht übernehmen',
     import: 'Übernehmen und anzeigen',
+    importOverwrite: 'Überschreiben & importieren',
     cancel: 'Abbrechen',
+    mergeInto: (name: string) => `Wird der Quelle „${name}“ zugeordnet – die Geschäftsjahre werden zusammengeführt.`,
+    mergeAsNewHint: 'Die Berichte werden als eigene Quelle angelegt.',
+    mergeAsNew: 'Als eigene Quelle anlegen',
+    mergeAssign: 'Zuordnen zu',
+    mergeNewSource: 'Neue Quelle',
+    duplicateFile: (file: string, source: string) =>
+      `Die Datei „${file}“ wurde bereits hochgeladen (Quelle „${source}“). Beim Übernehmen werden die Werte dieses Geschäftsjahres ersetzt.`,
     datasetFound: 'Datensatz erkannt',
     datasetSummary: (facts: number, periods: string, checks: number) =>
       `${facts} Positionen, Geschäftsjahre ${periods}, ${checks} Plausibilitätsprüfungen`,

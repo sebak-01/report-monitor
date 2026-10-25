@@ -118,6 +118,16 @@ function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: strin
   }
 }
 
+/**
+ * The reports behind one stored dataset plus newly uploaded ones, ready to be
+ * rebuilt with `buildDataset`. A new report replaces the stored report of the
+ * same year (the re-uploaded year wins entirely, no leftovers of the old one).
+ */
+export function combineReports(existing: ParsedReport[] | undefined, incoming: ParsedReport[]): ParsedReport[] {
+  const replaced = new Set(incoming.map((r) => r.meta.periodId));
+  return [...(existing ?? []).filter((r) => !replaced.has(r.meta.periodId)), ...incoming];
+}
+
 export interface MergeResult {
   dataset: Dataset;
   warnings: string[];

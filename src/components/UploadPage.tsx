@@ -2,7 +2,7 @@ import { useCallback, useId, useMemo, useRef, useState, type DragEvent } from 'r
 import { de } from '../i18n/de';
 import { formatByUnit } from '../lib/format';
 import { validateDataset } from '../lib/validate';
-import { buildDataset, parseReport, type ParsedReport } from '../lib/extract/buildDataset';
+import { parseReport, type ParsedReport } from '../lib/extract/buildDataset';
 import {
   buildUploadDataset,
   columnCount,
@@ -11,18 +11,17 @@ import {
   type Mapping,
   type RawTable,
 } from '../lib/upload/mapping';
+import { importDataset, importReports, matchCandidates, storedFileNames } from '../lib/upload/merge';
 import {
   ACCEPTED_EXTENSIONS,
   readUploads,
   UploadError,
   type UploadResult,
 } from '../lib/upload/readFile';
-import { withGenericView } from '../lib/upload/renderable';
-import { newDatasetId, type StoredDataset } from '../lib/upload/storage';
+import { DEDICATED_VIEWS, withGenericView } from '../lib/upload/renderable';
+import type { StoredDataset } from '../lib/upload/storage';
 import type { Dataset } from '../types';
 import { MappingForm } from './MappingForm';
-
-const DEDICATED_VIEWS = ['balance', 'income', 'anlagespiegel'];
 
 interface Props {
   stored: StoredDataset[];
@@ -43,6 +42,78 @@ function periodRange(dataset: Dataset): string {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('de-DE');
+}
+
+/**
+ * Which stored dataset the import is merged into: "auto" is the first name match,
+ * "new" keeps it as its own source, a stored id is an explicit choice.
+ */
+function useTarget(candidates: StoredDataset[]): {
+  target: StoredDataset | null;
+  selection: string;
+  pickTarget: (selection: string) => void;
+} {
+  const [selection, setSelection] = useState('auto');
+  const target =
+    selection === 'new'
+      ? null
+      : selection === 'auto'
+        ? (candidates[0] ?? null)
+        : (candidates.find((c) => c.id === selection) ?? null);
+  return { target, selection, pickTarget: setSelection };
+}
+
+function MergeTargetPicker({
+  candidates,
+  target,
+  onPick,
+}: {
+  candidates: StoredDataset[];
+  target: StoredDataset | null;
+  onPick: (selection: string) => void;
+}) {
+  if (candidates.length === 0) return null;
+  return (
+    <p role="status">
+      {target ? de.upload.mergeInto(target.name) : de.upload.mergeAsNewHint}{' '}
+      {candidates.length > 1 ? (
+        <>
+          <label htmlFor="merge-target">{de.upload.mergeAssign}</label>{' '}
+          <select id="merge-target" value={target?.id ?? 'new'} onChange={(e) => onPick(e.target.value)}>
+            <option value="new">{de.upload.mergeNewSource}</option>
+            {candidates.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : (
+        <label>
+          <input type="checkbox" checked={!target} onChange={(e) => onPick(e.target.checked ? 'new' : 'auto')} />{' '}
+          {de.upload.mergeAsNew}
+        </label>
+      )}
+    </p>
+  );
+}
+
+function DuplicateWarning({ duplicate }: { duplicate: { file: string; item: StoredDataset } | null }) {
+  if (!duplicate) return null;
+  return (
+    <p className="message message--warn" role="alert">
+      {de.upload.duplicateFile(duplicate.file, duplicate.item.name)}
+    </p>
+  );
+}
+
+/** A file that is already part of a stored dataset: importing it again replaces that year. */
+function findDuplicate(stored: StoredDataset[], fileNames: string[]): { file: string; item: StoredDataset } | null {
+  for (const file of fileNames) {
+    const item = stored.find((s) => storedFileNames(s).includes(file));
+    if (item) return { file, item };
+  }
+  return null;
 }
 
 function DropZone({ onFiles, busy }: { onFiles: (files: File[]) => void; busy: boolean }) {
@@ -153,10 +224,12 @@ function NameField({ value, onChange }: { value: string; onChange: (v: string) =
 
 function TableImport({
   upload,
+  stored,
   onImport,
   onCancel,
 }: {
   upload: Extract<UploadResult, { kind: 'tables' }>;
+  stored: StoredDataset[];
   onImport: (item: StoredDataset) => void | Promise<unknown>;
   onCancel: () => void;
 }) {
@@ -171,7 +244,14 @@ function TableImport({
     () => buildUploadDataset(table, mapping, { entityName: name, title: upload.fileName }),
     [table, mapping, name, upload.fileName],
   );
-  const dataset = result.dataset;
+  const candidates = matchCandidates(stored, [name]);
+  const { target, pickTarget } = useTarget(candidates);
+  const merged = useMemo(
+    () => (result.dataset ? importDataset(target, withGenericView(result.dataset, DEDICATED_VIEWS), name, upload.fileName) : null),
+    [result.dataset, target, name, upload.fileName],
+  );
+  const duplicate = findDuplicate(stored, [upload.fileName]);
+  const dataset = merged?.item.dataset ?? null;
 
   const pickTable = (index: number) => {
     setTableIndex(index);
@@ -197,12 +277,14 @@ function TableImport({
         </div>
       )}
       <NameField value={name} onChange={setName} />
+      <MergeTargetPicker candidates={candidates} target={target} onPick={pickTarget} />
+      <DuplicateWarning duplicate={duplicate} />
       <RawPreview table={table} mapping={mapping} />
       <MappingForm table={table} mapping={mapping} detectedFormat={result.numberFormat} onChange={setMapping} />
 
       <h3 className="card-title">{de.upload.stepPreview}</h3>
       <Messages title={de.upload.errors} items={result.errors} tone="error" />
-      <Messages title={de.upload.warnings} items={result.warnings} tone="warn" />
+      <Messages title={de.upload.warnings} items={[...result.warnings, ...(merged?.warnings ?? [])]} tone="warn" />
       {dataset && (
         <>
           <p>
@@ -242,19 +324,10 @@ function TableImport({
         <button
           type="button"
           className="button button--primary"
-          disabled={!dataset}
-          onClick={() =>
-            dataset &&
-            void onImport({
-              id: newDatasetId(),
-              name: dataset.entity.name,
-              fileName: upload.fileName,
-              createdAt: new Date().toISOString(),
-              dataset: withGenericView(dataset, DEDICATED_VIEWS),
-            })
-          }
+          disabled={!merged?.item}
+          onClick={() => merged && void onImport(merged.item)}
         >
-          {de.upload.import}
+          {duplicate ? de.upload.importOverwrite : de.upload.import}
         </button>
         <button type="button" className="button" onClick={onCancel}>
           {de.upload.cancel}
@@ -266,17 +339,23 @@ function TableImport({
 
 function DatasetImport({
   upload,
+  stored,
   onImport,
   onCancel,
 }: {
   upload: Extract<UploadResult, { kind: 'dataset' }>;
+  stored: StoredDataset[];
   onImport: (item: StoredDataset) => void | Promise<unknown>;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(upload.dataset.entity.name);
   const prepared = useMemo(() => withGenericView(upload.dataset, DEDICATED_VIEWS), [upload.dataset]);
   const report = useMemo(() => validateDataset(prepared), [prepared]);
-  const dataset = upload.dataset;
+  const candidates = matchCandidates(stored, [name.trim() || prepared.entity.name, prepared.entity.name]);
+  const { target, pickTarget } = useTarget(candidates);
+  const merged = useMemo(() => importDataset(target, prepared, name, upload.fileName), [target, prepared, name, upload.fileName]);
+  const duplicate = findDuplicate(stored, [upload.fileName]);
+  const dataset = merged.item.dataset;
   return (
     <section className="card" aria-labelledby="dataset-found-title">
       <h3 id="dataset-found-title" className="card-title">
@@ -292,25 +371,16 @@ function DatasetImport({
         </p>
       )}
       <NameField value={name} onChange={setName} />
+      <MergeTargetPicker candidates={candidates} target={target} onPick={pickTarget} />
+      <DuplicateWarning duplicate={duplicate} />
+      <Messages title={de.upload.warnings} items={merged.warnings} tone="warn" />
       <div className="actions">
         <button
           type="button"
           className="button button--primary"
-          onClick={() =>
-            void onImport({
-              id: newDatasetId(),
-              name: name.trim() || dataset.entity.name,
-              fileName: upload.fileName,
-              createdAt: new Date().toISOString(),
-              dataset: {
-                ...prepared,
-                entity: { ...prepared.entity, name: name.trim() || prepared.entity.name },
-                sources: prepared.sources.map((s) => ({ ...s, extraction: s.extraction ?? 'upload' })),
-              },
-            })
-          }
+          onClick={() => void onImport(merged.item)}
         >
-          {de.upload.import}
+          {duplicate ? de.upload.importOverwrite : de.upload.import}
         </button>
         <button type="button" className="button" onClick={onCancel}>
           {de.upload.cancel}
@@ -323,30 +393,45 @@ function DatasetImport({
 /** Reports (one per year) merged into one multi-year dataset. */
 function ExtractImport({
   reports,
+  stored,
   onImport,
   onCancel,
 }: {
   reports: ParsedReport[];
+  stored: StoredDataset[];
   onImport: (item: StoredDataset) => void | Promise<unknown>;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState(reports[reports.length - 1]?.meta.entityName ?? '');
-  const prepared = useMemo(() => {
+  const incomingNames = [...new Set(reports.map((r) => r.meta.entityName).filter((n) => n.trim() !== ''))];
+  const defaultName = reports[reports.length - 1]?.meta.entityName ?? '';
+  const candidates = matchCandidates(stored, incomingNames);
+  const { target, pickTarget } = useTarget(candidates);
+  const [name, setName] = useState(() => candidates[0]?.name ?? defaultName);
+  // Picking a target also adopts its display name, so merging never renames the stored source.
+  const pick = (selection: string) => {
+    pickTarget(selection);
+    const picked =
+      selection === 'new' ? null : selection === 'auto' ? candidates[0] : candidates.find((c) => c.id === selection);
+    setName(picked?.name ?? defaultName);
+  };
+
+  const result = useMemo(() => {
     try {
-      const { dataset, warnings } = buildDataset(reports);
-      return { dataset: withGenericView(dataset, DEDICATED_VIEWS), warnings, error: null as string | null };
+      return { ...importReports(target, reports, name), error: null as string | null };
     } catch (error) {
       return {
-        dataset: null as Dataset | null,
+        item: null as StoredDataset | null,
         warnings: [] as string[],
         error: error instanceof Error ? error.message : 'Die Berichte konnten nicht zusammengeführt werden.',
       };
     }
-  }, [reports]);
+  }, [target, reports, name]);
 
-  const periods = prepared.dataset?.periods.map((p) => p.id).join(', ') ?? '';
-  const factCount = prepared.dataset?.facts.length ?? 0;
-  const scheduleRows = prepared.dataset?.schedules?.reduce((n, s) => n + s.rows.length, 0) ?? 0;
+  const duplicate = findDuplicate(stored, reports.map((r) => r.fileName));
+  const dataset = result.item?.dataset ?? null;
+  const periods = dataset?.periods.map((p) => p.id).join(', ') ?? '';
+  const factCount = dataset?.facts.length ?? 0;
+  const scheduleRows = dataset?.schedules?.reduce((n, s) => n + s.rows.length, 0) ?? 0;
 
   return (
     <section className="card" aria-labelledby="extract-title">
@@ -366,13 +451,15 @@ function ExtractImport({
           </li>
         ))}
       </ul>
-      {prepared.error && (
+      {result.error && (
         <p className="message message--error" role="alert">
-          {prepared.error}
+          {result.error}
         </p>
       )}
-      <Messages title={de.upload.warnings} items={prepared.warnings} tone="warn" />
-      {prepared.dataset && (
+      <MergeTargetPicker candidates={candidates} target={target} onPick={pick} />
+      <DuplicateWarning duplicate={duplicate} />
+      <Messages title={de.upload.warnings} items={result.warnings} tone="warn" />
+      {dataset && (
         <>
           <p>
             <strong>{de.upload.resultTitle}:</strong> {de.upload.result(factCount, periods)}
@@ -385,23 +472,10 @@ function ExtractImport({
         <button
           type="button"
           className="button button--primary"
-          disabled={!prepared.dataset}
-          onClick={() =>
-            prepared.dataset &&
-            void onImport({
-              id: newDatasetId(),
-              name: name.trim() || prepared.dataset.entity.name,
-              fileName: reports.map((r) => r.fileName).join(', '),
-              createdAt: new Date().toISOString(),
-              dataset: {
-                ...prepared.dataset,
-                entity: { ...prepared.dataset.entity, name: name.trim() || prepared.dataset.entity.name },
-                sources: prepared.dataset.sources.map((s) => ({ ...s, extraction: s.extraction ?? 'upload' })),
-              },
-            })
-          }
+          disabled={!result.item}
+          onClick={() => result.item && void onImport(result.item)}
         >
-          {de.upload.import}
+          {duplicate ? de.upload.importOverwrite : de.upload.import}
         </button>
         <button type="button" className="button" onClick={onCancel}>
           {de.upload.cancel}
@@ -528,9 +602,13 @@ export function UploadPage(props: Props) {
           {de.upload.saveFailed}
         </p>
       )}
-      {reports && <ExtractImport reports={reports} onImport={onImport} onCancel={() => setReports(null)} />}
-      {upload?.kind === 'tables' && <TableImport upload={upload} onImport={onImport} onCancel={() => setUpload(null)} />}
-      {upload?.kind === 'dataset' && <DatasetImport upload={upload} onImport={onImport} onCancel={() => setUpload(null)} />}
+      {reports && <ExtractImport reports={reports} stored={props.stored} onImport={onImport} onCancel={() => setReports(null)} />}
+      {upload?.kind === 'tables' && (
+        <TableImport upload={upload} stored={props.stored} onImport={onImport} onCancel={() => setUpload(null)} />
+      )}
+      {upload?.kind === 'dataset' && (
+        <DatasetImport upload={upload} stored={props.stored} onImport={onImport} onCancel={() => setUpload(null)} />
+      )}
       <StoredList
         stored={props.stored}
         builtinOptions={props.builtinOptions}

@@ -1,4 +1,5 @@
 import type { Dataset } from '../../types';
+import type { ParsedReport } from '../extract/buildDataset';
 
 /** A dataset the user loaded. Lives in this browser's IndexedDB only; nothing is uploaded anywhere. */
 export interface StoredDataset {
@@ -7,6 +8,8 @@ export interface StoredDataset {
   fileName: string;
   createdAt: string;
   dataset: Dataset;
+  /** The report extracts the dataset was built from; later uploads of the same company are merged into it. */
+  reports?: ParsedReport[];
 }
 
 const DB_NAME = 'report-monitor';
