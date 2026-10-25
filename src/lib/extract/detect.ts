@@ -11,6 +11,8 @@ export interface ExtractPage {
 
 export interface ReportExtract {
   source_url?: string;
+  /** The newer extraction names the field `source`. */
+  source?: string;
   pages: ExtractPage[];
 }
 
@@ -94,7 +96,7 @@ export function readReportMeta(extract: ReportExtract, fileName: string): Report
     entityName: entity.name || fileName.replace(/_extracted\.json$/i, ''),
     entitySeat: entity.seat,
     periodId,
-    sourceUrl: extract.source_url,
+    sourceUrl: extract.source_url ?? extract.source,
     title: `Jahresabschluss ${periodId}`,
     extraction: ocr ? 'ocr' : 'text-layer',
   };

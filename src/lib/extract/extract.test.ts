@@ -233,6 +233,102 @@ describe('statements', () => {
     const { warnings } = parseStatements(pages, '2023', '2022');
     expect(warnings.join(' ')).toMatch(/Gleicher Betrag/);
   });
+
+  it('reads both columns of a layout-padded balance sheet', () => {
+    // The extraction keeps x-positions: wide padding separates Aktiva and
+    // Passiva, each column with its own label and amounts.
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'BILANZ zum 31. Dezember 2023\nMuster Technik GmbH, Musterstadt\n' +
+          'AKTIVA                                                                                                          PASSIVA\n' +
+          'A. Anlagevermögen                                                                                               A. Eigenkapital\n' +
+          'I. Immaterielle Vermögensgegenstände                                                                            l. Gezeichnetes Kapital       900.000,00     900.000,00\n' +
+          'Entgeltlich erworbene Konzessionen, gewerbliche Schutzrechte und ähnliche                                       Il. Kapitalrücklage         643.217,77     567.441,46\n' +
+          'Rechte und Werte sowie Lizenzen an solchen Rechten und Werten       16,00       16,00\n' +
+          'Il. Sachanlagen\n' +
+          '1. Grundstücke, grundstücksgleiche Rechte und Bauten einschließlich der Bauten\n' +
+          'auf fremden Grundstücken                                        5.845.890,22     6.002.308,22        C. Rückstellungen\n' +
+          '2. Technische Anlagen und Maschinen                             2.279.073,33     1.408.290,78\n' +
+          '3. Andere Anlagen, Betriebs- und Geschäftsausstattung             568.810,51       651.993,30        Sonstige Rückstellungen     239.218,34     223.854,40\n' +
+          '4. Geleistete Anzahlungen und Anlagen im Bau                          0,00       115.000,00\n' +
+          '8.693.774,06     8.177.592,30        D. Verbindlichkeiten\n' +
+          '1. Roh-, Hilfs- und Betriebsstoffe                               64.428,14       64.904,55            423.220,51     343.152,03\n' +
+          '10.454.082,46   10.009.169,39                             10.454.082,46   10.009.169,39\n',
+      },
+    ];
+    const { facts, warnings } = parseStatements(pages, '2023', '2022');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2023'];
+    // Passiva: the right column's amounts stay with their own labels.
+    expect(value('subscribed_capital')).toBe(900000);
+    expect(value('capital_reserve')).toBe(643217.77);
+    expect(value('other_provisions')).toBe(239218.34);
+    // Aktiva: wrapped labels and rows whose amounts end beside another label.
+    expect(value('intangible_licenses')).toBe(16);
+    expect(value('land_buildings')).toBe(5845890.22);
+    expect(value('technical_equipment')).toBe(2279073.33);
+    expect(value('other_equipment')).toBe(568810.51);
+    expect(value('raw_materials')).toBe(64428.14);
+    expect(value('tangible_assets_total')).toBeCloseTo(8693774.06, 2);
+    expect(value('fixed_assets_total')).toBeCloseTo(8693774.06 + 16, 2);
+    expect(value('total_assets')).toBe(10454082.46);
+    expect(value('total_equity_and_liabilities')).toBe(10454082.46);
+    expect(warnings.join(' ')).not.toMatch(/erwartet werden zwei/);
+  });
+
+  it('reads OCR-quirky labels: split letters and dropped umlauts', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Bilanz zum 31.12.2024\nMuster Technik GmbH\nAKTIVA PASSIVA\n' +
+          'I. Immaterielle Vermögensgegenstände I. Gezeichnetes Kapital 900.000,00 900.000,00\n' +
+          'entgeltlich erworbene Konzessionen, gewerbliche I I . K a p italrücklage 3.354.285,57 3.230.180,33\n' +
+          'Schutzrechte und ähnliche Rechte und Werte\n' +
+          'sowie Lizenzen an solchen Rechten und Werten 82.708,00 94.375,00 III. Jahresfehlbetrag -2.051.823,81 -2.180.384,72\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2024', '2023');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2024'];
+    // "K a p italrücklage" glues back to the label; its amounts stay its own.
+    expect(value('capital_reserve')).toBe(3354285.57);
+    expect(value('intangible_licenses')).toBe(82708);
+    expect(value('net_result_balance')).toBe(-2051823.81);
+  });
+
+  it('reads labels whose umlauts the OCR dropped', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text: 'Aktivseite\nI Immaterielle Vermogensgegenstande 109.198,00 125 979,00\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2023', '2022');
+    expect(facts.find((f) => f.key === 'intangible_assets')?.values['2023']).toBe(109198);
+  });
+
+  it('ignores GuV roll-forward rows when reading the balance sheet', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Aktivseite\n1. Stammkapital 1 370 000,00 1 370 000,00\n' +
+          'II Kaoitalrucklaae 3 086 180,33 2 550 037,22\n' +
+          'III. Bilanzverlust -1 868 250,46 -922 730,85\n',
+      },
+      {
+        page_number: 2,
+        text: 'Gewinn- und Verlustrechnung\n13. Entnahmen aus der Kapitalrücklage 922.730,85 1 323 315,57\n14. Bilanzverlust -1 868 250,46 -922 730,85\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2022', '2021');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2022'];
+    // The Passivseite row wins over the GuV's "Entnahmen aus der Kapitalrücklage".
+    expect(value('capital_reserve')).toBe(3086180.33);
+    expect(value('subscribed_capital')).toBe(1370000);
+    expect(value('equity_total')).toBeCloseTo(1370000 + 3086180.33 - 1868250.46, 2);
+  });
 });
 
 describe('buildDataset', () => {

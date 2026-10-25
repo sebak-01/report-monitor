@@ -31,6 +31,8 @@ export interface FactSpec {
   bareTotalAfter?: RegExp;
   /** Only match lines within this many lines after a line matching the anchor. */
   after?: { anchor: RegExp; within?: number };
+  /** Lines that carry this are no rows of the figure (e.g. "Entnahmen aus der Kapitalrücklage" in the GuV). */
+  exclude?: RegExp;
 }
 
 export const FACT_SPECS: FactSpec[] = [
@@ -48,7 +50,7 @@ export const FACT_SPECS: FactSpec[] = [
   { key: 'current_assets_total', statement: 'balance_assets', labelDe: 'Umlaufvermögen', patterns: [/Summe Umlaufverm/i], emphasis: 'total', numberLabel: 'B.', sumOf: ['inventories_total', 'receivables_total', 'cash'] },
   { key: 'inventories_total', statement: 'balance_assets', labelDe: 'Vorräte', patterns: [/Vorräte\s+(?=[\d(])/, /Vorräte\s*$/i], parentKey: 'current_assets_total', numberLabel: 'I.', emphasis: 'subtotal', sumOf: ['raw_materials', 'work_in_progress', 'inventory_advance_payments'] },
   { key: 'raw_materials', statement: 'balance_assets', labelDe: 'Roh-, Hilfs- und Betriebsstoffe', patterns: [/Roh-, Hilfs/i], parentKey: 'inventories_total', numberLabel: '1.' },
-  { key: 'work_in_progress', statement: 'balance_assets', labelDe: 'Unfertige Erzeugnisse, unfertige Leistungen', patterns: [/unfertige Erzeugnisse/i], parentKey: 'inventories_total', numberLabel: '2.' },
+  { key: 'work_in_progress', statement: 'balance_assets', labelDe: 'Unfertige Erzeugnisse, unfertige Leistungen', patterns: [/unfertige Erzeugnisse/i, /In Arbeit befindliche/i], parentKey: 'inventories_total', numberLabel: '2.' },
   { key: 'inventory_advance_payments', statement: 'balance_assets', labelDe: 'Geleistete Anzahlungen (Vorräte)', patterns: [/geleistete Anzahlungen/i], parentKey: 'inventories_total', numberLabel: '3.', after: { anchor: /Vorräte/i, within: 6 } },
   { key: 'receivables_total', statement: 'balance_assets', labelDe: 'Forderungen und sonstige Vermögensgegenstände', patterns: [/Summe der Forderungen/, /Forderungen und sonstige Vermögensgegen/i], parentKey: 'current_assets_total', numberLabel: 'II.', emphasis: 'subtotal', sumOf: ['trade_receivables', 'grantor_receivables', 'shareholder_receivables', 'other_assets'] },
   { key: 'trade_receivables', statement: 'balance_assets', labelDe: 'Forderungen aus Lieferungen und Leistungen', patterns: [/Forderungen aus Lieferungen/i], parentKey: 'receivables_total', numberLabel: '1.' },
@@ -61,7 +63,7 @@ export const FACT_SPECS: FactSpec[] = [
 
   // ------------------------------------------------------------- Passiva
   { key: 'subscribed_capital', statement: 'balance_liabilities', labelDe: 'Gezeichnetes Kapital', patterns: [/Gezeichnetes Kapital/i, /Stammkapital/i], parentKey: 'equity_total', numberLabel: 'I.' },
-  { key: 'capital_reserve', statement: 'balance_liabilities', labelDe: 'Kapitalrücklage', patterns: [/Ka.?italr.ckla/i], parentKey: 'equity_total', numberLabel: 'II.' },
+  { key: 'capital_reserve', statement: 'balance_liabilities', labelDe: 'Kapitalrücklage', patterns: [/Ka.?italr.ckla/i], parentKey: 'equity_total', numberLabel: 'II.', exclude: /Entnahme/i },
   { key: 'net_result_balance', statement: 'balance_liabilities', labelDe: 'Jahresfehlbetrag / Bilanzverlust', patterns: [/Jahresfehlbetra/i, /Bilanzverlust/i, /Jahresüberschuss/i], parentKey: 'equity_total', numberLabel: 'III.', result: true },
   { key: 'equity_total', statement: 'balance_liabilities', labelDe: 'Summe Eigenkapital', patterns: [/Summe Ei.enkap/i], emphasis: 'total', numberLabel: 'A.', sumOf: ['subscribed_capital', 'capital_reserve', 'net_result_balance'] },
   { key: 'special_item_grants', statement: 'balance_liabilities', labelDe: 'Sonderposten für Investitionszuschüsse', patterns: [/andere Sonderposten/i, /Sonder.osten/i], emphasis: 'subtotal', numberLabel: 'B.' },
@@ -119,7 +121,7 @@ export function statementPages(pages: { page_number: number; text: string }[]): 
   text: string;
 }[] {
   return pages.filter((p) =>
-    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
+    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Aktivseite|Passivseite|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
       p.text,
     ),
   );
@@ -158,15 +160,72 @@ function isFirstLabel(text: string, at: number): boolean {
   return !LABEL_MARK.test(head);
 }
 
-/** Amounts of a label that wraps over the following lines ("…, gewerb-" / "liche …"). */
+/**
+ * Amounts of a label that wraps over the following lines ("…, gewerb-" / "liche …").
+ * A complete row of the other column is skipped; a new labelled row ends the search.
+ */
 function gatherAmounts(lines: Line[], from: number): number[] {
   const gathered: number[] = [];
   for (let j = from; j < lines.length && j < from + 3; j += 1) {
-    if (LABEL_MARK.test(lines[j].text)) break;
-    gathered.push(...[...amountSpans(lines[j].text)].map((s) => s.value));
+    const amounts = [...amountSpans(lines[j].text)].map((s) => s.value);
+    const firstAt = [...amountSpans(lines[j].text)][0]?.index ?? lines[j].text.length;
+    const marked = LABEL_MARK.test(lines[j].text.slice(0, firstAt));
+    if (marked && amounts.length >= 2) continue; // the other column's own row
+    if (marked) break; // a new labelled row without amounts
+    if (amounts.length === 0) continue; // the label's own continuation
+    if (labelOf(lines[j].text).trim().length === 0) continue; // a bare group total, not a wrap
+    gathered.push(...amounts);
     if (gathered.length >= 2) break;
   }
   return gathered;
+}
+
+/**
+ * The extraction keeps x-positions: two statements side by side are separated by
+ * wide padding, each column with its own label and its own amounts. Splitting
+ * there gives every statement its own line; small gaps (schedule headers such as
+ * "Anschaffungs-,   Zugänge") stay untouched.
+ */
+const COLUMN_GAP = /\s{4,}(?=[A-Za-zÄÖÜäöüß])/;
+
+function splitColumns(line: string): string[] {
+  return line
+    .split(COLUMN_GAP)
+    .map((s) => s.replace(/\s+$/, ''))
+    .filter((s) => s.trim() !== '');
+}
+
+/** OCR quirks: umlauts dropped, letters split up ("K a p italrücklage", "Kaoitalrucklaae"). */
+function foldUmlauts(text: string): string {
+  return text
+    .replace(/ä/g, 'a')
+    .replace(/ö/g, 'o')
+    .replace(/ü/g, 'u')
+    .replace(/ß/g, 's')
+    .replace(/Ä/g, 'A')
+    .replace(/Ö/g, 'O')
+    .replace(/Ü/g, 'U');
+}
+
+/** One pass of each rule; the single-letter runs rebuild words split by the OCR. */
+function normalizeLine(raw: string): string {
+  return foldUmlauts(
+    raw
+      .replace(/\b([A-Za-zÄÖÜäöüß]) (?=[A-Za-zÄÖÜäöüß])/g, '$1')
+      .replace(/ (?=[.·,;:)])/g, ''),
+  );
+}
+
+const foldedCache = new WeakMap<RegExp, RegExp>();
+
+/** The pattern with umlauts folded, for lines normalised the same way. */
+function folded(pattern: RegExp): RegExp {
+  let cached = foldedCache.get(pattern);
+  if (!cached) {
+    cached = new RegExp(foldUmlauts(pattern.source), pattern.flags.replace('g', ''));
+    foldedCache.set(pattern, cached);
+  }
+  return cached;
 }
 
 /** A line of only amounts and punctuation ("3.712.510,40 3.824.054,68"). */
@@ -197,7 +256,9 @@ export function parseStatements(
 ): StatementResult {
   const lines: Line[] = [];
   for (const page of statementPages(pages)) {
-    for (const text of page.text.split('\n')) lines.push({ text, page: page.page_number });
+    for (const raw of page.text.split('\n')) {
+      for (const text of splitColumns(raw)) lines.push({ text: normalizeLine(text), page: page.page_number });
+    }
   }
 
   const found = new Map<string, [number, number]>();
@@ -209,7 +270,7 @@ export function parseStatements(
     const anchorAt = spec.after
       ? new Set(
           lines
-            .map((l, idx) => (spec.after!.anchor.test(l.text) ? idx : -1))
+            .map((l, idx) => (folded(spec.after!.anchor).test(l.text) ? idx : -1))
             .filter((idx) => idx >= 0),
         )
       : null;
@@ -223,18 +284,26 @@ export function parseStatements(
       let hit = false;
       for (let i = 0; i < lines.length && !hit; i += 1) {
         if (!nearAnchor(i)) continue;
+        if (spec.exclude && folded(spec.exclude).test(lines[i].text)) continue;
         // The line alone first, then joined with the next one: labels wrap.
         const spans: { text: string; endLine: number }[] = [{ text: lines[i].text, endLine: i }];
         if (i + 1 < lines.length) spans.push({ text: `${lines[i].text} ${lines[i + 1].text}`, endLine: i + 1 });
         for (const span of spans) {
-          const match = pattern.exec(span.text);
+          const match = folded(pattern).exec(span.text);
           if (!match) continue;
           // A match that starts in the next line gets its own turn there – the
           // line context (own label, amounts) would be the wrong one here.
           if (span.endLine !== i && match.index >= lines[i].text.length) continue;
           const matchEnd = match.index + match[0].length;
-          const own = isFirstLabel(lines[i].text, match.index) && !LABEL_MARK.test(span.text.slice(matchEnd));
-          const narrative = NARRATIVE.test(lines[i].text);
+          const rest = span.text.slice(matchEnd);
+          const firstAmount = [...amountSpans(rest)][0];
+          // A label mark between the label and its amounts means the amounts
+          // belong to the second statement; marks behind the amounts are just
+          // the other column's label and do not disqualify the row.
+          const own =
+            isFirstLabel(lines[i].text, match.index) &&
+            !LABEL_MARK.test(firstAmount ? rest.slice(0, firstAmount.index) : rest);
+          const narrative = folded(NARRATIVE).test(lines[i].text);
           let numbers = amountsAfter(span.text, matchEnd);
           if (span.endLine !== i && (!own || narrative)) {
             // Amounts behind the line boundary belong to the wrapped label of
@@ -259,10 +328,12 @@ export function parseStatements(
             }
           }
           if (!values && numbers.length === 0) {
-            // The label wraps before its amounts ("…, gewerb-" / "liche …"). Only
-            // the line's own label may gather them; behind a second statement the
-            // amounts belong to that statement, and narrative lines borrow none.
-            if (own && !narrative) {
+            // The label wraps before its amounts ("…, gewerb-" / "liche …"). The
+            // line's own label may gather them, even behind a second statement's
+            // label; a second statement's label may not – the amounts below
+            // belong to the first label's continuation. Narrative lines borrow none.
+            const first = isFirstLabel(lines[i].text, match.index);
+            if (first && !narrative) {
               const gathered = gatherAmounts(lines, span.endLine + 1);
               if (gathered.length > 0) {
                 numbers.push(...gathered);
@@ -271,6 +342,12 @@ export function parseStatements(
             } else if (!narrative && (labelMarkCount(lines[i].text) >= 2 || numbersInLine(lines[i].text))) {
               warnings.push(`„${spec.labelDe}": Beträge nicht zuordenbar (zwei Positionen in einer Zeile) – Wert fehlt.`);
             }
+          }
+          if (!values && numbers.length > 2) {
+            // The label keeps its own pair; further amounts are the next
+            // column's figures printed without a label of their own.
+            values = [numbers[0], numbers[1]];
+            warnings.push(`„${spec.labelDe}": ${numbers.length} Beträge in einer Zeile – erste beiden als Jahr/Vorjahr übernommen.`);
           }
           if (!values) {
             if (numbers.length > 0) {
@@ -303,9 +380,9 @@ export function parseStatements(
   for (const spec of FACT_SPECS) {
     if (found.has(spec.key)) continue;
     for (const pattern of spec.patterns) {
-      // The figure's own row is the shortest label that contains the pattern —
+      // The figure's own row is the shortest label that contains the pattern –
       // not the group row or the bare total that carries the same words.
-      const matches = rowLines.filter((r) => !r.unlabeled && pattern.test(r.label));
+      const matches = rowLines.filter((r) => !r.unlabeled && folded(pattern).test(foldUmlauts(r.label)));
       const row = matches.sort((a, b) => a.label.length - b.label.length)[0];
       if (!row) continue;
       const values = pair(row.numbers);
