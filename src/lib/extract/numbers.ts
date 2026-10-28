@@ -7,18 +7,23 @@
  */
 
 /** "55.110,43", "1 679,83", "31,601,88", "198.336,00-", "(2.500,00)" — comma decimals;
- *  "969.67" — dot decimals after OCR. The last separator before the decimals wins. */
+ *  "969.67", "70.544.48", "11,174.11" — dot decimals after OCR. The last separator
+ *  before the decimals wins. Amounts may butt together ("109.198,00.125.979,00",
+ *  "83.594.61.864,64") or carry OCR leftovers (".46.300,00", "48.419,51)"), and one
+ *  line may print several. */
 const TOKEN =
-  /(?<![\d,.])-?\(?\d[\d., ]*?,\d{2}\)?(?!\d)|(?<![\d,.])-?\(?\d[\d ]*\.\d{2}(?![\d,])\)?(?!\d)/g;
+  /(?:(?<![\d,.])|(?<= \.))-?\(?(?:\d{1,3}(?:[ .,]\d{3})*|\d[\d.,]*)(?:,\d{2}|\.\d{2})\)?(?!\d)|(?:(?<![\d,.])|(?<= \.))-?\(?\d[\d .]*?\.\d{2}(?![\d,])\)?(?!\d)/g;
 
 /** Parses one token into a number; `null` when the token cannot be read. */
 export function toFloat(token: string): number | null {
   let text = token.trim();
   let negative = false;
-  if (/^\(.*\)$/.test(text)) {
+  // Parens may come as a pair or as a lone OCR leftover.
+  if (text.startsWith('(')) {
     negative = true;
-    text = text.slice(1, -1);
+    text = text.slice(1);
   }
+  if (text.endsWith(')')) text = text.slice(0, -1);
   if (text.endsWith('-')) {
     negative = !negative;
     text = text.slice(0, -1);
@@ -50,6 +55,10 @@ export function toFloat(token: string): number | null {
 /** Dates in headlines ("31.12.2024", "01 01 2025") are not amounts. */
 const DATE = /\b\d{1,2}[ .]\d{1,2}[ .](?:19|20)\d{2}\b/g;
 
+/** Amounts butted together ("109.198,00.125.979,00", "83.594.61.864,64") – the
+ *  dot is a column gap, or OCR glued a decimal end to the next amount. */
+const JOINED = /(?<=,\d{2})\.(?=\d)|(?<=\.\d{2})\.(?=\d)/g;
+
 /** All amounts found in a line, in reading order. Dates are not amounts. */
 export function numbersIn(text: string): number[] {
   return [...amountSpans(text)].map((s) => s.value);
@@ -63,8 +72,10 @@ export interface AmountSpan {
 
 /** Amounts with their positions, for cutting labels off before the first amount. */
 export function* amountSpans(text: string): Generator<AmountSpan> {
-  // Blank out dates in place so the offsets stay valid.
-  const cleaned = text.replace(DATE, (m: string) => ' '.repeat(m.length));
+  // Blank out dates and split butted amounts in place so the offsets stay valid.
+  const cleaned = text
+    .replace(DATE, (m: string) => ' '.repeat(m.length))
+    .replace(JOINED, ' ');
   for (const match of cleaned.matchAll(TOKEN)) {
     const value = toFloat(match[0]);
     if (value === null) continue;
@@ -75,11 +86,18 @@ export function* amountSpans(text: string): Generator<AmountSpan> {
 }
 
 /**
- * (current, prior) from a line with two amounts, or three where the first two
- * repeat (some PDFs print the amount twice). Returns null when unreadable.
+ * (current, prior) from a line with two amounts, or three where one amount
+ * repeats (some PDFs print the amount twice) or the middle one is the merged
+ * group total printed on the item's row ("a) 74.629,83 + b) 105.580,68 =
+ * 180.210,51", so the row reads "b) 105.580,68 180.210,51 107.148,38").
+ * Returns null when unreadable.
  */
 export function pair(nums: number[]): [number, number] | null {
   if (nums.length === 2) return [nums[0], nums[1]];
   if (nums.length === 3 && Math.abs(nums[0] - nums[1]) < 0.005) return [nums[0], nums[2]];
+  if (nums.length === 3 && Math.abs(nums[1] - nums[2]) < 0.005) return [nums[0], nums[1]];
+  if (nums.length === 3 && Math.abs(nums[1]) > Math.abs(nums[0]) && Math.abs(nums[1]) > Math.abs(nums[2])) {
+    return [nums[0], nums[2]];
+  }
   return null;
 }

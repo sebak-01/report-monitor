@@ -11,7 +11,7 @@
 
 import type { Emphasis, Fact, Unit } from '../../types';
 import { amountSpans, pair } from './numbers';
-import { rowsFromText } from './rows';
+import { rowsFromText, type RawRow } from './rows';
 
 export interface FactSpec {
   key: string;
@@ -41,7 +41,7 @@ export const FACT_SPECS: FactSpec[] = [
   { key: 'intangible_assets', statement: 'balance_assets', labelDe: 'Immaterielle Vermögensgegenstände', patterns: [/sowie Lizenzen an solchen Rechten und Werten/i, /Rechten und Werten\s/i, /Immaterielle Vermögensgegenständ/i], parentKey: 'fixed_assets_total', numberLabel: 'I.', sumOf: ['intangible_licenses', 'goodwill', 'intangible_advances'] },
   { key: 'intangible_licenses', statement: 'balance_assets', labelDe: 'Entgeltlich erworbene Konzessionen, gewerbliche Schutzrechte und Lizenzen', patterns: [/entgeltlich erworbene Konzessionen/i, /Konzessionen, gewerb/i], parentKey: 'intangible_assets', numberLabel: '1.' },
   { key: 'goodwill', statement: 'balance_assets', labelDe: 'Geschäfts- oder Firmenwert', patterns: [/Geschäfts- oder Firmenwert/], parentKey: 'intangible_assets', numberLabel: '2.' },
-  { key: 'intangible_advances', statement: 'balance_assets', labelDe: 'Geleistete Anzahlungen (immateriell)', patterns: [/geleistete Anzahlungen/i], parentKey: 'intangible_assets', numberLabel: '3.', after: { anchor: /Immaterielle Vermögensgegenst/i, within: 3 } },
+  { key: 'intangible_advances', statement: 'balance_assets', labelDe: 'Geleistete Anzahlungen (immateriell)', patterns: [/geleistete Anzahlungen/i], parentKey: 'intangible_assets', numberLabel: '3.', after: { anchor: /Immaterielle Vermögensgegenst/i, within: 3 }, exclude: /Anlagen im Bau/i },
   { key: 'tangible_assets_total', statement: 'balance_assets', labelDe: 'Sachanlagen', patterns: [/Summe Sachanlagen/i], emphasis: 'subtotal', numberLabel: 'II.', parentKey: 'fixed_assets_total', sumOf: ['land_buildings', 'technical_equipment', 'other_equipment', 'construction_in_progress'] },
   { key: 'land_buildings', statement: 'balance_assets', labelDe: 'Grundstücke, grundstücksgleiche Rechte und Bauten', patterns: [/einschließlich der Bauten auf fremden/i], parentKey: 'tangible_assets_total', numberLabel: '1.' },
   { key: 'technical_equipment', statement: 'balance_assets', labelDe: 'Technische Anlagen und Maschinen', patterns: [/Technische Anlagen und Maschinen/i, /Tech\. Anl/], parentKey: 'tangible_assets_total', numberLabel: '2.' },
@@ -51,7 +51,7 @@ export const FACT_SPECS: FactSpec[] = [
   { key: 'inventories_total', statement: 'balance_assets', labelDe: 'Vorräte', patterns: [/Vorräte\s+(?=[\d(])/, /Vorräte\s*$/i], parentKey: 'current_assets_total', numberLabel: 'I.', emphasis: 'subtotal', sumOf: ['raw_materials', 'work_in_progress', 'inventory_advance_payments'] },
   { key: 'raw_materials', statement: 'balance_assets', labelDe: 'Roh-, Hilfs- und Betriebsstoffe', patterns: [/Roh-, Hilfs/i], parentKey: 'inventories_total', numberLabel: '1.' },
   { key: 'work_in_progress', statement: 'balance_assets', labelDe: 'Unfertige Erzeugnisse, unfertige Leistungen', patterns: [/unfertige Erzeugnisse/i, /In Arbeit befindliche/i], parentKey: 'inventories_total', numberLabel: '2.' },
-  { key: 'inventory_advance_payments', statement: 'balance_assets', labelDe: 'Geleistete Anzahlungen (Vorräte)', patterns: [/geleistete Anzahlungen/i], parentKey: 'inventories_total', numberLabel: '3.', after: { anchor: /Vorräte/i, within: 6 } },
+  { key: 'inventory_advance_payments', statement: 'balance_assets', labelDe: 'Geleistete Anzahlungen (Vorräte)', patterns: [/geleistete Anzahlungen/i], parentKey: 'inventories_total', numberLabel: '3.', after: { anchor: /Vorräte/i, within: 6 }, exclude: /Anlagen im Bau/i },
   { key: 'receivables_total', statement: 'balance_assets', labelDe: 'Forderungen und sonstige Vermögensgegenstände', patterns: [/Summe der Forderungen/, /Forderungen und sonstige Vermögensgegen/i], parentKey: 'current_assets_total', numberLabel: 'II.', emphasis: 'subtotal', sumOf: ['trade_receivables', 'grantor_receivables', 'shareholder_receivables', 'other_assets'] },
   { key: 'trade_receivables', statement: 'balance_assets', labelDe: 'Forderungen aus Lieferungen und Leistungen', patterns: [/Forderungen aus Lieferungen/i], parentKey: 'receivables_total', numberLabel: '1.' },
   { key: 'grantor_receivables', statement: 'balance_assets', labelDe: 'Forderungen an Zuschussgeber', patterns: [/Forderungen an Zuschussgeber/i], parentKey: 'receivables_total', numberLabel: '2.' },
@@ -115,20 +115,30 @@ interface Line {
   page: number;
 }
 
+/** OCR splits words ("Aktivs eite") – squashed, the words can be recognised. */
+function squashed(text: string): string {
+  return text.replace(/([A-Za-zÄÖÜäöüß])\s+(?=[A-Za-zÄÖÜäöüß])/g, '$1');
+}
+
+const AKTIVA = /A\s*K\s*T\s*I\s*V\s*A|Aktivseite/i;
+const PASSIVA = /P\s*A\s*S\s*S\s*I\s*V\s*A|Passivseite/i;
+
 /** The pages that carry the statements, not the Anhang or the Anlagespiegel. */
 export function statementPages(pages: { page_number: number; text: string }[]): {
   page_number: number;
   text: string;
 }[] {
   return pages.filter((p) =>
-    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Aktivseite|Passivseite|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
-      p.text,
+    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Aktivseite|Passivseite|Bilanz\s+(?:zum|per)|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
+      `${p.text}\n${squashed(p.text)}`,
     ),
   );
 }
 
-/** "1.", "II.", "a)", "Summe " – a new row starts here. OCR misreads roman numerals ("Il.", "Ill."). */
-const LABEL_MARK = /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
+/** "1.", "II.", "a)", "Summe " – a new row starts here. OCR misreads roman numerals
+ * ("Il.", "Ill.") and drops the dot after a row number ("1 sonstige Rückstellungen"). */
+const LABEL_MARK =
+  /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\s+(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
 
 /** Narrative lines ("…entwickelte sich im Geschäftsjahr …") are no rows and borrow no amounts. */
 const NARRATIVE =
@@ -163,10 +173,14 @@ function isFirstLabel(text: string, at: number): boolean {
 /**
  * Amounts of a label that wraps over the following lines ("…, gewerb-" / "liche …").
  * A complete row of the other column is skipped; a new labelled row ends the search.
+ * A line already read for an unrelated figure is not borrowed again – a parent
+ * group and its item may share one printed row.
  */
-function gatherAmounts(lines: Line[], from: number): number[] {
+function gatherAmounts(lines: Line[], from: number, claimedBy: Map<string, string>, family: Set<string>): number[] {
   const gathered: number[] = [];
   for (let j = from; j < lines.length && j < from + 3; j += 1) {
+    const claimer = claimedBy.get(lines[j].text.trim());
+    if (claimer !== undefined && !family.has(claimer)) continue;
     const amounts = [...amountSpans(lines[j].text)].map((s) => s.value);
     const firstAt = [...amountSpans(lines[j].text)][0]?.index ?? lines[j].text.length;
     const marked = LABEL_MARK.test(lines[j].text.slice(0, firstAt));
@@ -178,6 +192,13 @@ function gatherAmounts(lines: Line[], from: number): number[] {
     if (gathered.length >= 2) break;
   }
   return gathered;
+}
+
+/** A label whose words continue on the next line ("…, gewerb-", "… des"). */
+function endsWithWrap(text: string): boolean {
+  return /[-–]\s*$| (?:des|der|den|das|die|und|oder|für|auf|an|zu|mit|von|im|aus|sowie|bei|nach)\s*$/i.test(
+    text,
+  );
 }
 
 /**
@@ -263,6 +284,14 @@ export function parseStatements(
 
   const found = new Map<string, [number, number]>();
   const usedLabels = new Set<string>();
+  const claimedBy = new Map<string, string>();
+  // Parent group and its items may share one printed row; unrelated figures may not.
+  const familyOf = (spec: FactSpec): Set<string> => {
+    const family = new Set<string>([spec.key]);
+    if (spec.parentKey) family.add(spec.parentKey);
+    for (const other of FACT_SPECS) if (other.parentKey === spec.key) family.add(other.key);
+    return family;
+  };
   const warnings: string[] = [];
 
   for (const spec of FACT_SPECS) {
@@ -305,10 +334,18 @@ export function parseStatements(
             !LABEL_MARK.test(firstAmount ? rest.slice(0, firstAmount.index) : rest);
           const narrative = folded(NARRATIVE).test(lines[i].text);
           let numbers = amountsAfter(span.text, matchEnd);
-          if (span.endLine !== i && (!own || narrative)) {
+          if (span.endLine !== i) {
             // Amounts behind the line boundary belong to the wrapped label of
-            // the other column, or to the row a narrative line announces.
-            numbers = amountsAfter(lines[i].text, matchEnd);
+            // the other column, or to the row a narrative line announces. A
+            // complete label on this line borrows nothing from the next one –
+            // the amounts there are the ones printed with the next line's label.
+            // A label that wraps mid-match keeps its amounts on the continuation.
+            const firstBeyond = [...amountSpans(span.text)].find((s) => s.index >= matchEnd);
+            const crosses = firstBeyond !== undefined && firstBeyond.index >= lines[i].text.length;
+            const matchCrosses = matchEnd > lines[i].text.length;
+            if ((crosses && !matchCrosses && !endsWithWrap(lines[i].text)) || !own || narrative) {
+              numbers = amountsAfter(lines[i].text, matchEnd);
+            }
           }
           let values = numbers.length > 0 ? pair(numbers) : null;
           if (!values && numbers.length === 1 && span.endLine === i) {
@@ -334,7 +371,7 @@ export function parseStatements(
             // belong to the first label's continuation. Narrative lines borrow none.
             const first = isFirstLabel(lines[i].text, match.index);
             if (first && !narrative) {
-              const gathered = gatherAmounts(lines, span.endLine + 1);
+              const gathered = gatherAmounts(lines, span.endLine + 1, claimedBy, familyOf(spec));
               if (gathered.length > 0) {
                 numbers.push(...gathered);
                 values = pair(numbers);
@@ -357,7 +394,10 @@ export function parseStatements(
           }
           const label = labelOf(span.text);
           found.set(spec.key, spec.result ? normalizeResult(label, values) : values);
-          for (let k = i; k <= span.endLine; k += 1) usedLabels.add(lines[k].text.trim());
+          for (let k = i; k <= span.endLine; k += 1) {
+            usedLabels.add(lines[k].text.trim());
+            claimedBy.set(lines[k].text.trim(), spec.key);
+          }
           hit = true;
           break;
         }
@@ -368,49 +408,83 @@ export function parseStatements(
 
   // Labels that wrap over several lines are re-read from the row parser — but
   // only on pages with a single statement, where rows cannot mix two columns.
-  const soloPages = statementPages(pages).filter(
-    (p) => !(/A\s*K\s*T\s*I\s*V\s*A/i.test(p.text) && /P\s*A\s*S\s*S\s*I\s*V\s*A/i.test(p.text)),
-  );
-  const rowLines: { label: string; numbers: number[]; unlabeled: boolean }[] = [];
+  const soloPages = statementPages(pages).filter((p) => {
+    const text = `${p.text}\n${squashed(p.text)}`;
+    return !(AKTIVA.test(text) && PASSIVA.test(text));
+  });
+  const rowLines: RawRow[] = [];
   for (const page of soloPages) {
     for (const row of rowsFromText(page.text, page.page_number)) {
       if (row.numbers.length > 0) rowLines.push(row);
     }
   }
+  // A row already read for another figure stays with that figure.
+  const claimedRows = new Set<RawRow>();
+  const claimedLabel = (label: string) => {
+    const rowLabel = foldUmlauts(label);
+    return [...usedLabels].some((u) => u.includes(rowLabel));
+  };
   for (const spec of FACT_SPECS) {
     if (found.has(spec.key)) continue;
     for (const pattern of spec.patterns) {
       // The figure's own row is the shortest label that contains the pattern –
       // not the group row or the bare total that carries the same words.
-      const matches = rowLines.filter((r) => !r.unlabeled && folded(pattern).test(foldUmlauts(r.label)));
+      const matches = rowLines.filter(
+        (r) =>
+          !r.unlabeled &&
+          !claimedRows.has(r) &&
+          !claimedLabel(r.label) &&
+          (!spec.exclude || !folded(spec.exclude).test(foldUmlauts(r.label))) &&
+          folded(pattern).test(foldUmlauts(r.label)),
+      );
       const row = matches.sort((a, b) => a.label.length - b.label.length)[0];
       if (!row) continue;
       const values = pair(row.numbers);
       if (!values) break;
+      claimedRows.add(row);
       found.set(spec.key, spec.result ? normalizeResult(row.label, values) : values);
       break;
     }
   }
 
-  // Balance-sheet totals: a bare amount line at the end of the Aktiva/Passiva page.
+  // Balance-sheet totals: the bare amount line at the end of the Aktiva/Passiva
+  // page. Mid-page bare lines are group subtotals, not the total.
   for (const page of statementPages(pages)) {
-    const bare = page.text
-      .split('\n')
+    const pageLines = page.text.split('\n');
+    const nonEmpty = pageLines.map((_, i) => i).filter((i) => pageLines[i].trim() !== '');
+    const tailStart = nonEmpty[Math.max(0, nonEmpty.length - 3)] ?? 0;
+    const bare = pageLines
       .map((text, i) => ({ text, i }))
-      .filter((l) => isBare(l.text));
+      .filter((l) => l.i >= tailStart && isBare(l.text));
     if (bare.length === 0) continue;
     const last = bare[bare.length - 1];
     const numbers = [...amountSpans(last.text)].map((s) => s.value);
-    const assets = /A\s*K\s*T\s*I\s*V\s*A/i.test(page.text);
-    const liabs = /P\s*A\s*S\s*S\s*I\s*V\s*A/i.test(page.text);
+    const sides = `${page.text}\n${squashed(page.text)}`;
+    // OCR-garbled side headers ("A k 11 v s e 11 e") – the statement names decide,
+    // but only when no header matched at all (the Passiva names "Anlagevermögen"
+    // in "Sonderposten … zum Anlagevermögen" too). A GuV page carries no balance total.
+    const guv = /Gewinn- und Verlustrechnung|Ums.tzerl/i.test(page.text);
+    const headerAssets = AKTIVA.test(sides);
+    const headerLiabs = PASSIVA.test(sides);
+    const assets = headerAssets || (!headerLiabs && !guv && /Anlageverm|Umlaufverm/i.test(page.text));
+    const liabs = headerLiabs || (!headerAssets && !guv && /Eigenkapital|Verbindlichkeiten|Rückstellungen/i.test(page.text));
     if (numbers.length >= 4) {
       if (!found.has('total_assets')) found.set('total_assets', [numbers[0], numbers[1]]);
       if (!found.has('total_equity_and_liabilities')) {
         found.set('total_equity_and_liabilities', [numbers[2], numbers[3]]);
       }
     } else if (numbers.length >= 2) {
+      // A one-page balance prints its total once – it is both sides' total.
+      const both = assets && liabs;
       const key = assets && !liabs ? 'total_assets' : liabs && !assets ? 'total_equity_and_liabilities' : null;
-      if (key && !found.has(key)) found.set(key, [numbers[0], numbers[1]]);
+      if (both) {
+        if (!found.has('total_assets')) found.set('total_assets', [numbers[0], numbers[1]]);
+        if (!found.has('total_equity_and_liabilities')) {
+          found.set('total_equity_and_liabilities', [numbers[0], numbers[1]]);
+        }
+      } else if (key && !found.has(key)) {
+        found.set(key, [numbers[0], numbers[1]]);
+      }
     }
     usedLabels.add(last.text.trim());
   }
@@ -451,6 +525,7 @@ export function parseStatements(
   // Items a layout does not have count as 0; derived totals are recomputed every
   // pass until stable, so a parent is never frozen while its items are missing.
   const printed = new Set(found.keys());
+  const derived = new Set<string>();
   for (let pass = 0; pass < 8; pass += 1) {
     let changed = false;
     for (const spec of FACT_SPECS) {
@@ -465,14 +540,17 @@ export function parseStatements(
       const prev = found.get(spec.key);
       if (prev && Math.abs(prev[0] - sum[0]) < 0.005 && Math.abs(prev[1] - sum[1]) < 0.005) continue;
       found.set(spec.key, sum);
+      derived.add(spec.key);
       changed = true;
     }
     if (!changed) break;
   }
 
   // The same amount read for several figures is the signature of a misassignment.
+  // Derived group totals are skipped: a sum of one item repeats its value by design.
   const byValue = new Map<string, string[]>();
   for (const [key, v] of found) {
+    if (derived.has(key)) continue;
     if (Math.abs(v[0]) < 0.005) continue;
     byValue.set(String(v[0]), [...(byValue.get(String(v[0])) ?? []), key]);
   }

@@ -28,7 +28,22 @@ describe('numbersIn', () => {
   it('parses a pair of years', () => {
     expect(pair([1, 2])).toEqual([1, 2]);
     expect(pair([5, 5, 7])).toEqual([5, 7]);
+    expect(pair([1, 2, 2])).toEqual([1, 2]);
     expect(pair([5])).toBeNull();
+    // "b) 105.580,68 180.210,51 107.148,38" – the middle amount is the merged
+    // group total printed on the item's row, the last one is the prior year.
+    expect(pair([105580.68, 180210.51, 107148.38])).toEqual([105580.68, 107148.38]);
+  });
+
+  it('splits amounts the OCR glued together and reads lone closing parens', () => {
+    expect(numbersIn('109.198,00.125.979,00')).toEqual([109198, 125979]);
+    expect(numbersIn('83.594.61.864,64 864.64')).toEqual([83594.61, 864.64, 864.64]);
+    expect(numbersIn('11,174.11.171.441,74')).toEqual([11174.11, 171441.74]);
+    expect(numbersIn('(Vorjahr EUR 48.419,51) 2.580.094,56')).toEqual([48419.51, 2580094.56]);
+    // Dot decimals must not swallow the amount that follows.
+    expect(numbersIn('16.00 16,00')).toEqual([16, 16]);
+    expect(numbersIn('70.544.48 83.638,09')).toEqual([70544.48, 83638.09]);
+    expect(numbersIn('969.67 1.234,56')).toEqual([969.67, 1234.56]);
   });
 });
 
@@ -50,6 +65,23 @@ describe('detect', () => {
     expect(meta.entityName).toBe('Muster Technik GmbH');
     expect(meta.entitySeat).toBe('Musterstadt');
     expect(meta.extraction).toBe('text-layer');
+  });
+
+  it('keeps a wrapped company name with its first line', () => {
+    const extract = {
+      pages: [
+        {
+          page_number: 1,
+          text:
+            'Forschungsinstitut für Anorganische Werkstoffe\n' +
+            '-Glas/Keramik- GmbH, Höhr-Grenzhausen\n' +
+            'Bilanz zum 31.12.2019',
+        },
+      ],
+    };
+    const meta = readReportMeta(extract, 'fgk-2019_extracted.json');
+    expect(meta.entityName).toBe('Forschungsinstitut für Anorganische Werkstoffe -Glas/Keramik- GmbH');
+    expect(meta.entitySeat).toBe('Höhr-Grenzhausen');
   });
 });
 
@@ -189,6 +221,83 @@ describe('statements', () => {
     ];
     const { facts } = parseStatements(pages, '2023', '2022');
     expect(facts.find((f) => f.key === 'land_buildings')?.values['2023']).toBe(5845890.22);
+  });
+
+  it('reads a page whose side header the OCR garbled into digits', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'A k 11 v s e 11 e\nBilanz zum 31. Dezember 2020\nEUR EUR EUR EUR\n' +
+          'A. Anlagevermögen\n' +
+          'I. Immaterielle Vermögensgegenstände 174.890,00 205.716,00\n' +
+          '9.526.628,39 8.668.376,65\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2020', '2019');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2020'];
+    expect(value('intangible_assets')).toBe(174890);
+    expect(value('total_assets')).toBe(9526628.39);
+    expect(facts.find((f) => f.key === 'intangible_assets')?.values['2019']).toBe(205716);
+  });
+
+  it('keeps a wrapped label’s amounts when the other column’s row number lost its dot', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'BILANZ zum 31.12.2023\nAKTIVA PASSIVA\n' +
+          '1 Grundstücke, grundstucksgleiche Rechte und\n' +
+          'Bauten einschließlich der Bauten auf fremden 1 sonstige Rückstellungen 145.550,00 51.010,00\n' +
+          'Grundstücken 2.054.386,82 2.171.308,82\n',
+      },
+    ];
+    const { facts, warnings } = parseStatements(pages, '2023', '2022');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2023'];
+    expect(value('land_buildings')).toBe(2054386.82);
+    expect(value('other_provisions')).toBe(145550);
+    expect(warnings.join(' ')).not.toMatch(/Gleicher Betrag/);
+  });
+
+  it('takes first and last amount of a row whose middle amount is the merged group total', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Gewinn- und Verlustrechnung für das Geschäftsjahr 2021\n2020\nEUR EUR EUR\n' +
+          '3. Materialaufwand\n' +
+          'a) Aufwendungen für Roh-, Hilfs- und\n' +
+          'Betriebsstoffe und für bezogene Waren 92.369,79 74.629,83\n' +
+          'b) Aufwendungen für bezogene Leistungen 133.086,30 225.456,09 105.580,68\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2021', '2020');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2021'];
+    const prior = (key: string) => facts.find((f) => f.key === key)?.values['2020'];
+    expect(value('material_raw_supplies')).toBe(92369.79);
+    expect(value('material_purchased_services')).toBe(133086.3);
+    expect(prior('material_purchased_services')).toBe(105580.68);
+  });
+
+  it('ignores a mid-page bare amount line as balance-sheet total', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'P A S S I V A\nBilanz zum 31. Dezember 2022\nEUR EUR\n' +
+          'C. RÜCKSTELLUNGEN\n' +
+          'Sonstige Rückstellungen 25.343,94 15.525,87\n' +
+          '25.343,94 15.525,87\n' +
+          'D. VERBINDLICHKEITEN\n' +
+          '1. Verbindlichkeiten gegenüber Kreditinstituten 332,43 10.015,38\n' +
+          'E. RECHNUNGSABGRENZUNGSPOSTEN 4.383,16 2.439,66\n' +
+          'Anlage 1 Seite 2\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2022', '2021');
+    const value = (key: string) => facts.find((f) => f.key === key)?.values['2022'];
+    expect(value('other_provisions')).toBe(25343.94);
+    expect(value('total_equity_and_liabilities')).toBeUndefined();
   });
 
   it('sums a group total from items that are only found later', () => {

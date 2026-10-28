@@ -4,9 +4,9 @@
  *   node --experimental-transform-types scripts/generate-datasets.ts data/single-data/
  *
  * The output is git-ignored and never part of the build; load the files through
- * "Daten hochladen" in the dashboard. One dataset per company folder (FGK,
- * ifos, TIME), one report extract per year. The same parser the browser uses
- * reads the extracts; the dashboard's reconciliation checks validate the result.
+ * "Daten hochladen" in the dashboard. One dataset per company (fgk, ifos, time),
+ * one report extract per year. The same parser the browser uses reads the
+ * extracts; the dashboard's reconciliation checks validate the result.
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -26,25 +26,25 @@ const [, , sourceDir = 'data/single-data', outDir = 'data'] = process.argv;
 const OUT_NAME: Record<string, string> = {
   // The curated pilot dataset fgk.json is the one to load; the auto-extract is
   // written under its own name so it never overwrites it.
-  FGK: 'fgk-auto',
+  fgk: 'fgk-auto',
   ifos: 'ifos',
-  TIME: 'time',
+  time: 'time',
 };
 
-function extractFiles(dir: string): string[] {
-  return readdirSync(dir)
-    .filter((name) => name.endsWith('.json'))
-    .map((name) => join(dir, name))
-    .sort();
+/** Extracts named "<company>-<year>_extracted.json", grouped per company. */
+function companyGroups(dir: string): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const name of readdirSync(dir).filter((n) => n.endsWith('.json')).sort()) {
+    const match = /^(.+?)-(\d{4})_extracted\.json$/.exec(name) ?? /^(.+?)-(\d{4})\.json$/.exec(name);
+    const company = match ? match[1] : basename(name, '.json');
+    groups.set(company, [...(groups.get(company) ?? []), join(dir, name)]);
+  }
+  return groups;
 }
 
 function main(): void {
   mkdirSync(outDir, { recursive: true });
-  for (const company of readdirSync(sourceDir)) {
-    const dir = join(sourceDir, company);
-    const files = extractFiles(dir);
-    if (files.length === 0) continue;
-
+  for (const [company, files] of companyGroups(sourceDir)) {
     const reports = [];
     for (const file of files) {
       const json = JSON.parse(readFileSync(file, 'utf-8'));

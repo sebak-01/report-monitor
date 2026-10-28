@@ -259,8 +259,12 @@ export function parseAnlagespiegel(text: string, periodId: string, page: number,
     let values: ScheduleRow['values'] = {};
     if (row.numbers.length > 0) {
       const solved = solveRow(row.numbers, layout, columnKeys);
-      if (solved) {
+      // Absurd magnitudes are OCR soup, not figures – keep them out of the data.
+      const absurd = solved ? Object.values(solved).some((v) => v !== null && Math.abs(v) > 1e9) : false;
+      if (solved && !absurd) {
         values = { [periodId]: solved };
+      } else if (absurd) {
+        warnings.push(`Zeile „${label}": Beträge nicht lesbar (wahrscheinlich OCR-Fehler) – Werte fehlen.`);
       } else {
         warnings.push(`Zeile „${label}": ${row.numbers.length} Werte passen nicht in ${layout.roles.length} Spalten.`);
       }

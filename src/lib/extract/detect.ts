@@ -39,25 +39,31 @@ export function looksLikeExtract(json: unknown): json is ReportExtract {
   );
 }
 
-const COMPANY_LINE = /^.{5,80}(GmbH|AG|KG|e\.?V\.?|GmbH & Co\.?)[,;]?\s*\S+/im;
+const COMPANY_LINE = /^.{5,80}(GmbH|AG|KG|e\.?V\.?|GmbH & Co\.?)(?:[,;]\s*\S.*)?$/im;
 
 /**
  * The company as printed in the header, split into name and seat:
  * "Forschungsinstitut für Glas - Keramik GmbH, Höhr-Grenzhausen".
+ * A name that wraps ("Forschungsinstitut für Anorganische Werkstoffe" /
+ * "-Glas/Keramik- GmbH, Höhr-Grenzhausen") keeps its first line.
  */
 export function findEntity(pages: ExtractPage[]): { name: string; seat?: string } {
-  for (const page of pages) {
-    for (const line of page.text.split('\n')) {
-      const trimmed = line.trim().replace(/\s+/g, ' ');
-      if (!/GmbH|AG\b/.test(trimmed)) continue;
-      if (/Anhang|Anlage \d|Bilanz|Gewinn|Geschäftsjahr|Handelsregister/i.test(trimmed)) continue;
-      if (!COMPANY_LINE.test(trimmed)) continue;
-      const cut = trimmed.lastIndexOf(',');
-      if (cut > 0) {
-        return { name: trimmed.slice(0, cut).trim(), seat: trimmed.slice(cut + 1).trim() };
-      }
-      return { name: trimmed.replace(/\s*[,;]\s*$/, '') };
+  const lines = pages.flatMap((page) => page.text.split('\n'));
+  for (let i = 0; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim().replace(/\s+/g, ' ');
+    if (!/GmbH|AG\b/.test(trimmed)) continue;
+    if (/Anhang|Anlage \d|Bilanz|Geschäftsjahr|Handelsregister/i.test(trimmed)) continue;
+    if (!COMPANY_LINE.test(trimmed)) continue;
+    let full = trimmed;
+    const form = /(GmbH|AG\b|KG\b|e\.?V\.?)/i.exec(trimmed);
+    const head = form ? /(^|,)\s*[-–]|^[a-zäöüß]/.exec(trimmed.slice(0, form.index + form[0].length)) : null;
+    if (head && i > 0) {
+      const prev = lines[i - 1].trim().replace(/\s+/g, ' ');
+      if (prev !== '' && !/[\d.,]/.test(prev) && prev.length <= 80) full = `${prev} ${trimmed}`;
     }
+    const cut = full.lastIndexOf(',');
+    if (cut > 0) return { name: full.slice(0, cut).trim(), seat: full.slice(cut + 1).trim() };
+    return { name: full.replace(/\s*[,;]\s*$/, '') };
   }
   return { name: '' };
 }
