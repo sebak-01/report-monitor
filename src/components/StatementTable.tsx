@@ -18,8 +18,8 @@ function amount(value: number | null): string {
 
 /**
  * A full statement (Aktiva, Passiva or GuV) as a table: position numbers as
- * printed, both years and the change. Rows with sub-items can be collapsed.
- * Amounts are in EUR and shown as printed in the report.
+ * printed (Bilanz: § 266 HGB), both years and the change. Rows with sub-items
+ * can be collapsed. Amounts are in EUR and shown as printed in the report.
  */
 export function StatementTable({ title, rows, currentLabel, previousLabel }: Props) {
   // Start fully collapsed: only the top levels (A., B., … / 1., 2., …) are visible.

@@ -1,7 +1,5 @@
-import type { ReactNode } from 'react';
 import { KpiCard } from '../components/KpiCard';
 import { appliesTo, createLookup, previousPeriodId, type ValueLookup } from '../lib/dataset';
-import { formatAmount } from '../lib/format';
 import type { KpiCardModel } from '../lib/kpiCards';
 import type { ValidationReport } from '../lib/validate';
 import type { Dataset, Note, Redaction } from '../types';
@@ -56,35 +54,7 @@ export function KpiGrid({ label, cards }: { label: string; cards: KpiCardModel[]
   );
 }
 
-/** An amount in EUR with the previous year in parentheses, as in the Verbindlichkeitenspiegel. */
-export function AmountWithPrior({ current, previous }: { current: number | null; previous: number | null }) {
-  return (
-    <>
-      {current === null ? '–' : formatAmount(current)}{' '}
-      <span className="muted">({previous === null ? '–' : formatAmount(previous)})</span>
-    </>
-  );
-}
-
-/** A card whose body is folded away until the heading is clicked. */
-export function CollapsibleCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-}) {
-  return (
-    <details className="card collapsible">
-      <summary className="statement-title">{title}</summary>
-      {subtitle && <p className="card-subtitle">{subtitle}</p>}
-      {children}
-    </details>
-  );
-}
-
+/** Notes of a view, folded away until the heading is clicked. */
 export function NoteList({ title, notes }: { title: string; notes: Note[] }) {
   if (notes.length === 0) return null;
   return (

@@ -19,27 +19,25 @@ Companies that changed their name can store earlier names in `entity.formerNames
 the current one. Lines that only exist in some years' layouts (e.g. Verlustvortrag from 2021) are handled with
 `absentIn` / `layouts` per fact.
 
-- **Bilanz** (Anlage 1 and Anhang III "Angaben zur Bilanz")
+- **Bilanz** (Anlage 1)
   - KPI cards: Bilanzsumme, Anlagevermögen, Eigenkapitalquote, liquide Mittel
   - structure of Aktiva and Passiva for both years (stacked bars)
-  - the complete Aktiva and Passiva as tables with position numbers, both years and the change; rows with
-    sub-items can be collapsed
-  - Anhang III: Kapitalrücklage and Sonderposten (roll-forwards), sonstige Rückstellungen, Verbindlichkeitenspiegel,
-    remarks
-- **Gewinn- und Verlustrechnung** (Anlage 2 and Anhang IV "Erläuterungen zur GuV")
+  - the complete Aktiva and Passiva as tables in the § 266 HGB structure (with "B. Sonderposten" on the
+    liabilities side; printed designations as tooltips), both years and the change; rows with sub-items can
+    be collapsed. The "Anzeige nach §266 HGB" checkbox switches between the full catalogue of posts (empty
+    ones included) and only the rows that carry figures
+- **Gewinn- und Verlustrechnung** (Anlage 2)
   - KPI cards: Umsatzerlöse, Jahresfehlbetrag, Personalaufwand, Personalaufwand im Verhältnis zum Umsatz
   - comparison chart of the main income statement items
   - the complete income statement as a table
-  - Anhang IV directly below it: Umsatzerlöse by activity (chart and table), domestic/foreign split, items from
-    other fiscal years
 - **Anlagespiegel** (fixed asset schedule of the Anhang) – shown when the dataset has one
   - the full matrix as printed: columns of the cost roll-forward, the accumulated depreciation and the book
     values, grouped under their super-headings; zeros omitted in the source are filled in from the roll-forward
   - Restbuchwert, Zugänge and the year's depreciation as headline figures, a trend of the main items
   - roll-forward checks (AHK and AfA movements, book value = cost − depreciation) in the check panel
   - when the source blacks the schedule out, the view shows the notice instead of the table
-- each view shows the plausibility checks that belong to it; figures a company's layout does not have are left out,
-  sections with no data at all are hidden
+- each view shows the plausibility checks that belong to it; figures a company's layout does not have are left out
+  (the Bilanz keeps the § 266 posts as empty rows instead, see the "Anzeige nach §266 HGB" checkbox)
 - light and dark mode (follows the OS setting, or set `data-theme="light|dark"` on `<html>`)
 
 ### Upload frame (CSV, XLSX, JSON)
@@ -67,8 +65,8 @@ anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" drop
 Limits: 15 MB per file, 50,000 rows, years only (no quarters), one unit per table upload, no `.xls`. The old `.xls`
 format and PDF files are rejected with a message.
 
-Not built yet: analytics, Anhang I/II (accounting methods), Anhang V (management, supervisory board) and the
-Corporate Governance Bericht.
+Not built yet: analytics, the Anhang views (accounting methods, Angaben zur Bilanz, Erläuterungen zur GuV,
+management and supervisory board) and the Corporate Governance Bericht.
 
 ## Quick start
 
@@ -118,6 +116,7 @@ src/lib/validate.ts           runs all reconciliation checks; splits the report 
 src/lib/dataset.ts            runtime shape check, value lookup, period helpers
 src/lib/emptyDataset.ts       the dashboard with no data loaded: statement structure, every figure null
 src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
+src/lib/balanceLayout.ts      § 266 HGB skeleton of the Bilanz (Aktiva/Passiva) and the mapping of fact keys
 src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
 src/lib/grouped.ts            models for the grouped and the stacked bar charts
 src/lib/extract/              report extracts (*_extracted.json) -> dataset: numbers.ts, rows.ts, detect.ts,
@@ -190,7 +189,7 @@ Each check is evaluated for every period within the tolerance given in `conventi
 
 ## Roadmap
 
-1. **Display** (this version): Bilanz and GuV views with the complete statements, Anhang III/IV, trends, validation.
+1. **Display** (this version): Bilanz and GuV views with the complete statements, trends, validation.
 2. **Upload frame** (done for CSV, XLSX, JSON and report extracts): drag and drop, column mapping, preview, stored in the browser only; several report extracts merge into one multi-year dataset.
 3. **Anlagespiegel** (this version): the fixed asset schedule as a view of its own, read from the report extract or from the dataset's `schedules`.
 4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles.

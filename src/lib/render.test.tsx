@@ -40,19 +40,21 @@ describe('view smoke render', () => {
       // Year slider and bar/line switch on the comparison charts.
       expect(income).toContain('chart-toolbar');
       expect(balance).toContain('chart-toolbar');
-      expect((income.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(2);
-      expect((balance.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(3);
+      expect((income.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(1);
+      expect((balance.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(2);
 
       // Figures the dashboard does not show: auditor fee, Anlagenspiegel.
       expect(income).not.toContain('Abschlussprüfer');
       expect(balance).not.toContain('Anlagenspiegel');
 
+      // The Anhang sections are gone (check labels of the validation panel may
+      // still name such positions).
+      expect(balance).not.toContain('Angaben zur Bilanz');
+      expect(balance).not.toContain('balance-anhang-title');
+      expect(income).not.toContain('Erläuterungen zur Gewinn- und Verlustrechnung');
+      expect(income).not.toContain('income-anhang-title');
+
       if (file !== 'emptyDataset') {
-        // "Weitere Angaben" start folded away, where the dataset has any.
-        if ((dataset.notes?.length ?? 0) > 0) {
-          expect(income).toContain('<details class="card collapsible">');
-          expect(balance).toContain('<details class="card collapsible">');
-        }
         // Statements start collapsed: the A./B./C./D. rows show their chevrons closed.
         expect(income).toContain('aria-expanded="false"');
         expect(balance).toContain('aria-expanded="false"');
@@ -83,6 +85,16 @@ describe('view smoke render', () => {
     );
     expect(balance).toContain('Bilanzsumme');
     expect(balance).toContain('–');
+    // The § 266 toggle is part of the statement card and starts switched on.
+    expect(balance).toContain('Anzeige nach §266 HGB');
+    expect(balance).toContain('<label class="hgb-toggle"><input type="checkbox" checked');
+    // The balance tables show the § 266 skeleton: standard term "B. Sonderposten",
+    // posts without data stay in place ("E. Aktiver Unterschiedsbetrag …", "F. …").
+    expect(balance).toContain('<span class="row-number">B.</span><span>Sonderposten</span>');
+    expect(balance).toContain(
+      '<span class="row-number">E.</span><span>Aktiver Unterschiedsbetrag aus der Vermögensverrechnung</span>',
+    );
+    expect(balance).toContain('Passive latente Steuern');
   });
 });
 

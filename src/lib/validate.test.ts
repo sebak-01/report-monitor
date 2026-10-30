@@ -4,7 +4,7 @@ import type { Dataset } from '../types';
 import { parseDataset } from './dataset';
 import { buildGroupedModel } from './grouped';
 import { buildKpiCards } from './kpiCards';
-import { buildStatementRows } from './statementRows';
+import { buildBalanceStatementRows, buildStatementRows } from './statementRows';
 import { reportForView, validateDataset } from './validate';
 
 // The pilot dataset is not part of the public repository; these tests only run where the file exists.
@@ -154,7 +154,7 @@ describePilot('KPI cards', () => {
 
 describePilot('statement rows', () => {
   it('builds the Aktiva with numbering, hierarchy and printed values', () => {
-    const rows = buildStatementRows(load(), 'balance_assets', '2024', '2023');
+    const rows = buildBalanceStatementRows(load(), 'balance_assets', '2024', '2023');
     const byKey = Object.fromEntries(rows.map((r) => [r.key, r]));
 
     expect(rows[0].key).toBe('fixed_assets_total');
@@ -165,6 +165,11 @@ describePilot('statement rows', () => {
     expect(byKey['land_buildings'].level).toBe(2);
     expect(byKey['land_buildings'].ancestors).toEqual(['tangible_assets_total', 'fixed_assets_total']);
 
+    // § 266 numbering: the cash line is IV., the empty Wertpapiere post III. stays in place.
+    expect(byKey['cash'].number).toBe('IV.');
+    expect(byKey['securities_current_total'].current).toBeNull();
+    expect(rows.map((r) => r.key)).toContain('financial_assets_total');
+
     expect(byKey['total_assets'].current).toBeCloseTo(9926371.56, 2);
     expect(byKey['total_assets'].previous).toBeCloseTo(10454082.46, 2);
     expect(byKey['total_assets'].emphasis).toBe('total');
@@ -173,13 +178,15 @@ describePilot('statement rows', () => {
 
   it('keeps null values null and gives no change for them', () => {
     // Steuerrückstellungen are not broken out in the 2023 and 2024 reports.
-    const row = buildStatementRows(load(), 'balance_liabilities', '2022', '2021').find(
+    const row = buildBalanceStatementRows(load(), 'balance_liabilities', '2022', '2021').find(
       (r) => r.key === 'tax_provisions',
     )!;
     expect(row.current).not.toBeNull();
-    const none = buildStatementRows(load(), 'balance_liabilities', '2024', '2023').find(
+    const none = buildBalanceStatementRows(load(), 'balance_liabilities', '2024', '2023').find(
       (r) => r.key === 'tax_provisions',
     );
+    // The post stays visible as an empty § 266 row ("2. Steuerrückstellungen").
+    expect(none?.number ?? null).toBe('2.');
     expect(none?.current ?? null).toBeNull();
     expect(none?.previous ?? null).toBeNull();
     expect(none?.deltaAbs ?? null).toBeNull();

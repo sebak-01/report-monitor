@@ -473,6 +473,16 @@ h1 {
   cursor: help;
 }
 
+.hgb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
 .statement {
   margin-top: 20px;
 }
