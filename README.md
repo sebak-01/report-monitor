@@ -114,7 +114,7 @@ src/lib/expression.ts         safe parser/evaluator for the formulas inside data
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
 src/lib/validate.ts           runs all reconciliation checks; splits the report by view; roll-forward checks of schedules
 src/lib/dataset.ts            runtime shape check, value lookup, period helpers
-src/lib/emptyDataset.ts       the dashboard with no data loaded: statement structure, every figure null
+src/lib/emptyDataset.ts       the dataset behind the empty start view: every figure null
 src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
 src/lib/balanceLayout.ts      § 266 HGB skeleton of the Bilanz (Aktiva/Passiva) and the mapping of fact keys
 src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
@@ -123,13 +123,13 @@ src/lib/extract/              report extracts (*_extracted.json) -> dataset: num
                               statements.ts (Bilanz/GuV by label), anlagespiegel.ts (matrix + roll-forward solver),
                               buildDataset.ts (one or more reports -> multi-year dataset)
 src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json/extract), mapping.ts (table -> dataset),
-                              storage.ts (IndexedDB), renderable.ts (generic view fallback)
+                              entityMatch.ts, merge.ts, storage.ts (IndexedDB), renderable.ts (generic view fallback)
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
 src/i18n/de.ts                all user-visible strings that are not part of the data
 scripts/generate-datasets.ts  builds data/*.json from the report extracts in data/single-data/
-src/components/               ViewSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
-                              UploadPage, MappingForm, SourceSelect, ErrorBoundary,
+src/components/               ViewSelect, PeriodSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
+                              UploadPage, MappingForm, SourceSelect, ErrorBoundary, ChartControls, useChartYears,
                               GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
 src/views/                    BalanceView, IncomeView, AnlagespiegelView, DataView (what each dropdown entry shows)
 ```
@@ -163,8 +163,8 @@ A dataset (schema version 0.4) is one JSON file:
   column key. A view lists its schedules in `schedules` beside its `statements`.
 - `checks`: reconciliation rules `lhs = rhs`, each assigned to the `views` in which it is shown, e.g.
   `fixed_assets_total + current_assets_total + prepaid_expenses` = `total_assets`
-- `notes`: remarks from the Anhang that are shown as text, per view
-- `redactions`: things the source blacks out or omits (`kind`: `redacted` | `missing`; optional `periods`), shown as a notice in their view instead of being left out
+- `notes`: remarks from the Anhang, shown as text in the Anlagespiegel and Daten views
+- `redactions`: things the source blacks out or omits (`kind`: `redacted` | `missing`; optional `periods`), shown as a notice in the Anlagespiegel and Daten views instead of being left out
 
 Units: `EUR`, `TEUR` (thousand euros), `count`, `pct` (88.9 means 88.9 %) and `ratio` (0.269 means 26.9 %).
 
@@ -208,11 +208,12 @@ reconciliation checks catch typing errors in sums, not wrong values that happen 
 
 ## Known limitations
 
-- The JavaScript bundle is about 750 kB (250 kB gzipped), mostly ECharts. Fine for now; code splitting
+- The JavaScript bundle is about 1 MB (315 kB gzipped), mostly ECharts. Fine for now; code splitting
   comes with the analytics phase.
 - Which items go into which chart and which KPIs are shown per view is configured in code
   (`src/views/*.tsx`, `src/lib/kpiCards.ts`) for now, not yet in the dataset; views of a dataset whose keys
-  are unknown fall back to their own first figures and hide sections without data.
+  are unknown fall back to their own first figures; charts without data are hidden, while the Bilanz tables
+  keep the § 266 posts as empty rows (see the "Anzeige nach §266 HGB" checkbox).
 - The Aktiva and Passiva tables are stacked, not side by side as in the PDF, so that they also work on a phone.
 - The aqua and yellow chart colors have low contrast on the light surface. Every chart therefore has a legend,
   tooltips and a table view with the same numbers.
