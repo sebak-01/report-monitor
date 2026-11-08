@@ -1,0 +1,46 @@
+{
+  "datasets": [
+    {
+      "id": "fgk",
+      "file": "fgk.json",
+      "name": "Forschungsinstitut für Glas - Keramik GmbH",
+      "entityName": "Forschungsinstitut für Glas - Keramik GmbH",
+      "periods": [
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ],
+      "sourcePortal": "https://open.rlp.de"
+    },
+    {
+      "id": "ifos",
+      "file": "ifos.json",
+      "name": "Institut für Oberflächen- und Schichttechnik GmbH",
+      "entityName": "Institut für Oberflächen- und Schichttechnik GmbH",
+      "periods": [
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "sourcePortal": "https://open.rlp.de"
+    },
+    {
+      "id": "time",
+      "file": "time.json",
+      "name": "Technologie-Institut für Metall und Engineering GmbH",
+      "entityName": "Technologie-Institut für Metall und Engineering GmbH",
+      "periods": [
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ],
+      "sourcePortal": "https://open.rlp.de"
+    }
+  ]
+}

@@ -167,6 +167,8 @@ export interface SourceDoc {
   period: string;
   title: string;
   url?: string;
+  /** URI of the open-data record the report was published with (license attribution). */
+  datasetUrl?: string;
   pagesUsed?: string;
   extraction?: string;
   verified?: boolean;

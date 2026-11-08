@@ -3,10 +3,12 @@ dist
 *.local
 .DS_Store
 
-# Datasets and report extracts stay out of the repository entirely: generate
-# them locally (npm run generate:datasets -> data/) and load them per upload.
-data/
-public/data/
+# The working dataset tree stays out of the repository: generate it locally
+# (npm run generate:datasets -> data/) and load it per upload. The published
+# sample datasets under public/data/ are committed on purpose — the underlying
+# reports are open data (dl-de/by-2-0) and ship with the site as read-only
+# "Beispieldaten". The leading slash anchors the pattern to the repo root.
+/data/
 *_extracted.json
 README.local.md
 tools/base/

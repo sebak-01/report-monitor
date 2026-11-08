@@ -1,0 +1,2817 @@
+{
+  "schemaVersion": "0.3",
+  "entity": {
+    "id": "fgk-hoehr-grenzhausen",
+    "name": "Forschungsinstitut für Glas - Keramik GmbH",
+    "legalForm": "GmbH",
+    "seat": "Höhr-Grenzhausen",
+    "register": "Amtsgericht Montabaur, HRB 3212",
+    "accountingStandard": "HGB",
+    "incomeStatementMethod": "Gesamtkostenverfahren (§ 275 Abs. 2 HGB)",
+    "formerNames": [
+      {
+        "name": "Forschungsinstitut für Anorganische Werkstoffe -Glas/Keramik- GmbH",
+        "until": "2021-12-16"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "period": "2019",
+      "title": "Jahresabschluss 2019: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/ea92e9f4-0884-4447-b0e9-a31a5c5c3c3d/resource/946d9d48-254e-4081-b64f-18e0123f3238/download/forschungsinstitut-fur-glas-keramik-gmbh-2019.pdf",
+      "pagesUsed": "PDF-Seiten 1-3 (Bilanz, GuV), Anhang",
+      "extraction": "text-layer",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/0321c0c1-c038-4ecf-9f50-d8f121cedbaa"
+    },
+    {
+      "period": "2020",
+      "title": "Jahresabschluss 2020: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/cb9b3ade-a5ba-45e7-bd62-5ff770fe2a26/resource/0e4c61a9-2ae0-4afa-b0f6-7c7117307f49/download/forschungsinstitut-fur-glas-keramik-gmbh-2020.pdf",
+      "pagesUsed": "PDF-Seiten 1-3 (Bilanz, GuV), Anhang",
+      "extraction": "text-layer",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/c26074c6-8f53-401c-a6e4-4cb0875525a6"
+    },
+    {
+      "period": "2021",
+      "title": "Jahresabschluss 2021: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/86d90b88-bdc4-46e4-bd11-9b6d4295df31/resource/bfed6153-ca71-4fe4-a8fb-f50ccf1349e8/download/forschungsinstitut-fur-glas-keramik-gmbh-2021.pdf",
+      "pagesUsed": "PDF-Seiten 1-3 (Bilanz, GuV), Anhang",
+      "extraction": "text-layer",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/0e7cf7db-f0eb-44e5-8723-7e75d1a16077"
+    },
+    {
+      "period": "2022",
+      "title": "Jahresabschluss 2022: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/c4cf1a3d-01c7-48df-9c4d-e3c2c2383b07/resource/5a156d51-50dd-4382-8e68-553213b812ef/download/forschungsinstitut-fur-glas-keramik-gmbh-2022.pdf",
+      "pagesUsed": "PDF-Seiten 1-3 (Bilanz, GuV), Anhang",
+      "extraction": "text-layer",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/569d413c-6409-4d60-b844-4474d8537f6f"
+    },
+    {
+      "period": "2023",
+      "title": "Jahresabschluss 2023: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/56791b7c-d0db-47d5-80c3-5bcab7e3f734/resource/fc140537-cfb2-4315-9741-31b080646534/download/forschungsinstitut-fur-glas-keramik-gmbh-fgk-2023.pdf",
+      "pagesUsed": "Bericht 2023 nur als Scan; Werte überwiegend aus dem Bericht 2024",
+      "extraction": "manual",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/4cc46b8e-f7f1-4ace-baf2-ee263eeca877"
+    },
+    {
+      "period": "2024",
+      "title": "Jahresabschluss 2024: Bilanz, Gewinn- und Verlustrechnung, Anhang",
+      "url": "https://upload.open.rlp.de/eakte/e353b713-d280-4aa3-92bd-9196092df458/resource/b45829a0-b94a-401c-b74e-2d77f753e250/download/forschungsinstitut-fur-glas-keramik-gmbh-fgk-2024.pdf",
+      "pagesUsed": "PDF-Seiten 1-7: Anlage 1 (Bilanz), Anlage 2 (GuV), Anlage 3 Anhang",
+      "extraction": "manual",
+      "verified": false,
+      "datasetUrl": "https://open.rlp.de/dataset/193b263b-005f-4069-bfb3-db5fafe793dd"
+    }
+  ],
+  "periods": [
+    {
+      "id": "2018",
+      "start": "2018-01-01",
+      "end": "2018-12-31",
+      "comparisonOnly": true
+    },
+    {
+      "id": "2019",
+      "start": "2019-01-01",
+      "end": "2019-12-31"
+    },
+    {
+      "id": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31"
+    },
+    {
+      "id": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31"
+    },
+    {
+      "id": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31"
+    },
+    {
+      "id": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31"
+    },
+    {
+      "id": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    }
+  ],
+  "conventions": {
+    "currency": "EUR",
+    "tolerance": 0.01,
+    "signs": "Balance sheet amounts and income statement lines are positive as printed (expenses as positive cost amounts). Exceptions are flagged with a note. net_result and net_result_balance use economic sign (negative = loss). A fact may be hidden in a report year (absentIn) when that year's layout has no such line, and a layout entry can override its label, number and print sign.",
+    "nullMeaning": "null = value not printed, not available or redacted in the source"
+  },
+  "statements": {
+    "balance_assets": {
+      "labelDe": "Aktiva"
+    },
+    "balance_liabilities": {
+      "labelDe": "Passiva"
+    },
+    "income": {
+      "labelDe": "Gewinn- und Verlustrechnung"
+    }
+  },
+  "views": [
+    {
+      "id": "balance",
+      "labelDe": "Bilanz",
+      "sourceDe": "Anlage 1 und Anhang III (Angaben zur Bilanz)",
+      "statements": [
+        "balance_assets",
+        "balance_liabilities"
+      ]
+    },
+    {
+      "id": "income",
+      "labelDe": "Gewinn- und Verlustrechnung",
+      "sourceDe": "Anlage 2 und Anhang IV (Erläuterungen zur Gewinn- und Verlustrechnung)",
+      "statements": [
+        "income"
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "key": "fixed_assets_total",
+      "statement": "balance_assets",
+      "labelDe": "Anlagevermögen",
+      "unit": "EUR",
+      "values": {
+        "2018": 7846144.85,
+        "2019": 7525300.15,
+        "2020": 7929716.9,
+        "2021": 7829008.72,
+        "2022": 8286790.3,
+        "2023": 8788149.06,
+        "2024": 8320301.5
+      },
+      "numberLabel": "A."
+    },
+    {
+      "key": "intangible_assets",
+      "statement": "balance_assets",
+      "parentKey": "fixed_assets_total",
+      "labelDe": "Immaterielle Vermögensgegenstände (entgeltlich erworbene Konzessionen, gewerbliche Schutzrechte und ähnliche Rechte und Werte sowie Lizenzen an solchen Rechten und Werten)",
+      "unit": "EUR",
+      "values": {
+        "2018": 203601.0,
+        "2019": 205716.0,
+        "2020": 174890.0,
+        "2021": 125979.0,
+        "2022": 109198.0,
+        "2023": 94375.0,
+        "2024": 82708.0
+      },
+      "numberLabel": "I."
+    },
+    {
+      "key": "tangible_assets_total",
+      "statement": "balance_assets",
+      "parentKey": "fixed_assets_total",
+      "labelDe": "Sachanlagen",
+      "unit": "EUR",
+      "values": {
+        "2018": 7642543.85,
+        "2019": 7319584.15,
+        "2020": 7754826.9,
+        "2021": 7703029.72,
+        "2022": 8177592.3,
+        "2023": 8693774.06,
+        "2024": 8237593.5
+      },
+      "numberLabel": "II."
+    },
+    {
+      "key": "land_buildings",
+      "statement": "balance_assets",
+      "parentKey": "tangible_assets_total",
+      "labelDe": "Grundstücke, grundstücksgleiche Rechte und Bauten einschließlich der Bauten auf fremden Grundstücken",
+      "unit": "EUR",
+      "values": {
+        "2018": 6608082.22,
+        "2019": 6452105.22,
+        "2020": 6315144.22,
+        "2021": 6158726.22,
+        "2022": 6002308.22,
+        "2023": 5845890.22,
+        "2024": 5689473.22
+      },
+      "numberLabel": "1."
+    },
+    {
+      "key": "technical_equipment",
+      "statement": "balance_assets",
+      "parentKey": "tangible_assets_total",
+      "labelDe": "Technische Anlagen und Maschinen",
+      "unit": "EUR",
+      "values": {
+        "2018": 637117.0,
+        "2019": 518988.0,
+        "2020": 802027.0,
+        "2021": 796806.0,
+        "2022": 1408290.78,
+        "2023": 2279073.33,
+        "2024": 2096343.01
+      },
+      "numberLabel": "2."
+    },
+    {
+      "key": "other_equipment",
+      "statement": "balance_assets",
+      "parentKey": "tangible_assets_total",
+      "labelDe": "Andere Anlagen, Betriebs- und Geschäftsausstattung",
+      "unit": "EUR",
+      "values": {
+        "2018": 397344.63,
+        "2019": 348490.93,
+        "2020": 566872.48,
+        "2021": 747497.5,
+        "2022": 651993.3,
+        "2023": 568810.51,
+        "2024": 437293.36
+      },
+      "numberLabel": "3."
+    },
+    {
+      "key": "construction_in_progress",
+      "statement": "balance_assets",
+      "parentKey": "tangible_assets_total",
+      "labelDe": "Geleistete Anzahlungen und Anlagen im Bau",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 70783.2,
+        "2021": 0.0,
+        "2022": 115000.0,
+        "2023": 0.0,
+        "2024": 14483.91
+      },
+      "numberLabel": "4.",
+      "absentIn": [
+        "2018",
+        "2019"
+      ]
+    },
+    {
+      "key": "current_assets_total",
+      "statement": "balance_assets",
+      "labelDe": "Umlaufvermögen",
+      "unit": "EUR",
+      "values": {
+        "2018": 1314390.04,
+        "2019": 1132444.8,
+        "2020": 1574809.68,
+        "2021": 1799878.42,
+        "2022": 1703035.86,
+        "2023": 1646124.63,
+        "2024": 1582947.78
+      },
+      "numberLabel": "B."
+    },
+    {
+      "key": "inventories_total",
+      "statement": "balance_assets",
+      "parentKey": "current_assets_total",
+      "labelDe": "Vorräte",
+      "unit": "EUR",
+      "values": {
+        "2018": 65645.87,
+        "2019": 67157.5,
+        "2020": 61224.54,
+        "2021": 64396.23,
+        "2022": 64904.55,
+        "2023": 95728.14,
+        "2024": 49818.53
+      },
+      "numberLabel": "I."
+    },
+    {
+      "key": "raw_materials",
+      "statement": "balance_assets",
+      "parentKey": "inventories_total",
+      "labelDe": "Roh-, Hilfs- und Betriebsstoffe",
+      "unit": "EUR",
+      "values": {
+        "2018": 65645.87,
+        "2019": 67157.5,
+        "2020": 61224.54,
+        "2021": 64396.23,
+        "2022": 64904.55,
+        "2023": 64428.14,
+        "2024": 40190.4
+      },
+      "numberLabel": "1."
+    },
+    {
+      "key": "work_in_progress",
+      "statement": "balance_assets",
+      "parentKey": "inventories_total",
+      "labelDe": "Unfertige Erzeugnisse, unfertige Leistungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 31300.0,
+        "2024": 0.0
+      },
+      "numberLabel": "2.",
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ]
+    },
+    {
+      "key": "inventory_advance_payments",
+      "statement": "balance_assets",
+      "parentKey": "inventories_total",
+      "labelDe": "Geleistete Anzahlungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 9628.13
+      },
+      "numberLabel": "3.",
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ]
+    },
+    {
+      "key": "receivables_total",
+      "statement": "balance_assets",
+      "parentKey": "current_assets_total",
+      "labelDe": "Forderungen und sonstige Vermögensgegenstände",
+      "unit": "EUR",
+      "values": {
+        "2018": 357073.86,
+        "2019": 604759.1,
+        "2020": 971971.9,
+        "2021": 630586.69,
+        "2022": 951068.91,
+        "2023": 570342.45,
+        "2024": 349164.15
+      },
+      "numberLabel": "II."
+    },
+    {
+      "key": "trade_receivables",
+      "statement": "balance_assets",
+      "parentKey": "receivables_total",
+      "labelDe": "Forderungen aus Lieferungen und Leistungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 234292.13,
+        "2019": 375597.5,
+        "2020": 167593.3,
+        "2021": 263324.63,
+        "2022": 351958.03,
+        "2023": 188831.65,
+        "2024": 253773.85
+      },
+      "numberLabel": "1."
+    },
+    {
+      "key": "grantor_receivables",
+      "statement": "balance_assets",
+      "parentKey": "receivables_total",
+      "labelDe": "Forderungen an Zuschussgeber",
+      "unit": "EUR",
+      "values": {
+        "2018": 110983.3,
+        "2019": 201537.16,
+        "2020": 604745.15,
+        "2021": 309008.52,
+        "2022": 431841.51,
+        "2023": 282652.2,
+        "2024": 14458.36
+      },
+      "numberLabel": "2."
+    },
+    {
+      "key": "shareholder_receivables",
+      "statement": "balance_assets",
+      "parentKey": "receivables_total",
+      "labelDe": "Forderungen gegen Gesellschafter",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 10763.44,
+        "2020": 171308.42,
+        "2021": 31821.7,
+        "2022": 152131.5,
+        "2023": 0.0,
+        "2024": 0.0
+      },
+      "note": "Position printed without amounts",
+      "numberLabel": "3."
+    },
+    {
+      "key": "other_assets",
+      "statement": "balance_assets",
+      "parentKey": "receivables_total",
+      "labelDe": "Sonstige Vermögensgegenstände",
+      "unit": "EUR",
+      "values": {
+        "2018": 11798.43,
+        "2019": 16861.0,
+        "2020": 28325.03,
+        "2021": 26431.84,
+        "2022": 15137.87,
+        "2023": 98858.6,
+        "2024": 80931.94
+      },
+      "numberLabel": "4."
+    },
+    {
+      "key": "cash",
+      "statement": "balance_assets",
+      "parentKey": "current_assets_total",
+      "labelDe": "Kassenbestand, Bundesbankguthaben, Guthaben bei Kreditinstituten und Schecks",
+      "unit": "EUR",
+      "values": {
+        "2018": 891670.31,
+        "2019": 460528.2,
+        "2020": 541613.24,
+        "2021": 1104895.5,
+        "2022": 687062.4,
+        "2023": 980054.04,
+        "2024": 1183965.1
+      },
+      "numberLabel": "III."
+    },
+    {
+      "key": "prepaid_expenses",
+      "statement": "balance_assets",
+      "labelDe": "Rechnungsabgrenzungsposten",
+      "unit": "EUR",
+      "values": {
+        "2018": 10108.0,
+        "2019": 10631.7,
+        "2020": 22101.81,
+        "2021": 12233.08,
+        "2022": 19343.23,
+        "2023": 19808.77,
+        "2024": 23122.28
+      },
+      "numberLabel": "C."
+    },
+    {
+      "key": "total_assets",
+      "statement": "balance_assets",
+      "labelDe": "Bilanzsumme",
+      "unit": "EUR",
+      "values": {
+        "2018": 9170642.89,
+        "2019": 8668376.65,
+        "2020": 9526628.39,
+        "2021": 9641120.22,
+        "2022": 10009169.39,
+        "2023": 10454082.46,
+        "2024": 9926371.56
+      },
+      "emphasis": "total"
+    },
+    {
+      "key": "equity_total",
+      "statement": "balance_liabilities",
+      "labelDe": "Eigenkapital",
+      "unit": "EUR",
+      "values": {
+        "2018": 2266463.98,
+        "2019": 2266690.71,
+        "2020": 2182866.28,
+        "2021": 2997306.37,
+        "2022": 2587929.87,
+        "2023": 2419795.61,
+        "2024": 2672461.76
+      },
+      "numberLabel": "A."
+    },
+    {
+      "key": "subscribed_capital",
+      "statement": "balance_liabilities",
+      "parentKey": "equity_total",
+      "labelDe": "Gezeichnetes Kapital",
+      "unit": "EUR",
+      "values": {
+        "2018": 570000.0,
+        "2019": 570000.0,
+        "2020": 570000.0,
+        "2021": 1370000.0,
+        "2022": 1370000.0,
+        "2023": 1370000.0,
+        "2024": 1370000.0
+      },
+      "numberLabel": "I."
+    },
+    {
+      "key": "capital_reserve",
+      "statement": "balance_liabilities",
+      "parentKey": "equity_total",
+      "labelDe": "Kapitalrücklage",
+      "unit": "EUR",
+      "values": {
+        "2018": 2436085.8,
+        "2019": 2435623.62,
+        "2020": 2936181.85,
+        "2021": 2550037.22,
+        "2022": 3086180.33,
+        "2023": 3230180.33,
+        "2024": 3354285.57
+      },
+      "numberLabel": "II."
+    },
+    {
+      "key": "net_result_balance",
+      "statement": "balance_liabilities",
+      "parentKey": "equity_total",
+      "labelDe": "Jahresfehlbetrag",
+      "unit": "EUR",
+      "values": {
+        "2018": -739621.82,
+        "2019": -738932.91,
+        "2020": -1323315.57,
+        "2021": -922730.85,
+        "2022": -1868250.46,
+        "2023": -2180384.72,
+        "2024": -2051823.81
+      },
+      "numberLabel": "III.",
+      "layouts": {
+        "2019": {
+          "labelDe": "Jahresfehlbetrag"
+        },
+        "2020": {
+          "labelDe": "Jahresfehlbetrag"
+        },
+        "2021": {
+          "labelDe": "Bilanzverlust"
+        },
+        "2022": {
+          "labelDe": "Bilanzverlust"
+        }
+      }
+    },
+    {
+      "key": "special_item_grants",
+      "statement": "balance_liabilities",
+      "labelDe": "Sonderposten für Investitionszuschüsse zum Anlagevermögen",
+      "unit": "EUR",
+      "values": {
+        "2018": 6512837.83,
+        "2019": 6191960.55,
+        "2020": 6316187.83,
+        "2021": 6337141.0,
+        "2022": 6854233.09,
+        "2023": 7371848.0,
+        "2024": 6940757.91
+      },
+      "numberLabel": "B."
+    },
+    {
+      "key": "provisions_total",
+      "statement": "balance_liabilities",
+      "labelDe": "Rückstellungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 162500.53,
+        "2019": 121806.62,
+        "2020": 196852.2,
+        "2021": 115349.31,
+        "2022": 223854.4,
+        "2023": 239218.34,
+        "2024": 228969.63
+      },
+      "numberLabel": "C."
+    },
+    {
+      "key": "tax_provisions",
+      "statement": "balance_liabilities",
+      "parentKey": "provisions_total",
+      "labelDe": "Steuerrückstellungen",
+      "unit": "EUR",
+      "numberLabel": "1.",
+      "values": {
+        "2018": 4449.39,
+        "2019": 2964.0,
+        "2020": 0.0,
+        "2021": 5600.0,
+        "2022": 0.0,
+        "2023": null,
+        "2024": null
+      },
+      "absentIn": [
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "other_provisions",
+      "statement": "balance_liabilities",
+      "parentKey": "provisions_total",
+      "labelDe": "Sonstige Rückstellungen",
+      "unit": "EUR",
+      "numberLabel": "2.",
+      "values": {
+        "2018": 158051.14,
+        "2019": 118842.62,
+        "2020": 196852.2,
+        "2021": 109749.31,
+        "2022": 223854.4,
+        "2023": null,
+        "2024": null
+      },
+      "absentIn": [
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "liabilities_total",
+      "statement": "balance_liabilities",
+      "labelDe": "Verbindlichkeiten",
+      "unit": "EUR",
+      "values": {
+        "2018": 228840.55,
+        "2019": 87918.77,
+        "2020": 830722.08,
+        "2021": 191323.54,
+        "2022": 343152.03,
+        "2023": 423220.51,
+        "2024": 84182.26
+      },
+      "numberLabel": "D."
+    },
+    {
+      "key": "bank_liabilities",
+      "statement": "balance_liabilities",
+      "parentKey": "liabilities_total",
+      "labelDe": "Verbindlichkeiten gegenüber Kreditinstituten",
+      "unit": "EUR",
+      "numberLabel": "1.",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 332342.01,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      },
+      "absentIn": [
+        "2018",
+        "2019",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "advance_payments_received",
+      "statement": "balance_liabilities",
+      "parentKey": "liabilities_total",
+      "labelDe": "Erhaltene Anzahlungen auf Bestellungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 6076.47,
+        "2021": 8749.0,
+        "2022": 0.0,
+        "2023": 44062.4,
+        "2024": 0.0
+      },
+      "numberLabel": "1.",
+      "absentIn": [
+        "2018",
+        "2019"
+      ],
+      "layouts": {
+        "2020": {
+          "numberLabel": "2."
+        },
+        "2021": {
+          "numberLabel": "2."
+        }
+      }
+    },
+    {
+      "key": "trade_payables",
+      "statement": "balance_liabilities",
+      "parentKey": "liabilities_total",
+      "labelDe": "Verbindlichkeiten aus Lieferungen und Leistungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 63614.0,
+        "2019": 48454.99,
+        "2020": 400615.31,
+        "2021": 86821.24,
+        "2022": 215294.1,
+        "2023": 315214.87,
+        "2024": 51113.51
+      },
+      "numberLabel": "2.",
+      "layouts": {
+        "2020": {
+          "numberLabel": "3."
+        },
+        "2021": {
+          "numberLabel": "3."
+        },
+        "2019": {
+          "numberLabel": "1."
+        }
+      }
+    },
+    {
+      "key": "unused_grants_liabilities",
+      "statement": "balance_liabilities",
+      "parentKey": "liabilities_total",
+      "labelDe": "Verbindlichkeiten aus noch nicht verwendeten Zuschüssen",
+      "unit": "EUR",
+      "values": {
+        "2018": 150000.0,
+        "2019": 0.0,
+        "2020": 66853.82,
+        "2021": 56625.28,
+        "2022": 14468.01,
+        "2023": 0.0,
+        "2024": 24000.0
+      },
+      "numberLabel": "3.",
+      "layouts": {
+        "2019": {
+          "labelDe": "Verbindlichkeiten gegenüber Gesellschaftern",
+          "numberLabel": "2."
+        },
+        "2020": {
+          "labelDe": "Verbindlichkeiten gegenüber Gesellschaftern",
+          "numberLabel": "4."
+        },
+        "2021": {
+          "numberLabel": "4.",
+          "labelDe": "Verbindlichkeiten aus noch nicht verwendeten Zuschüssen"
+        }
+      }
+    },
+    {
+      "key": "other_liabilities",
+      "statement": "balance_liabilities",
+      "parentKey": "liabilities_total",
+      "labelDe": "Sonstige Verbindlichkeiten",
+      "unit": "EUR",
+      "values": {
+        "2018": 15226.55,
+        "2019": 39463.78,
+        "2020": 24834.47,
+        "2021": 39128.02,
+        "2022": 113389.92,
+        "2023": 63943.24,
+        "2024": 9068.75
+      },
+      "numberLabel": "4.",
+      "layouts": {
+        "2020": {
+          "numberLabel": "5."
+        },
+        "2021": {
+          "numberLabel": "5."
+        },
+        "2019": {
+          "numberLabel": "3."
+        }
+      }
+    },
+    {
+      "key": "other_liabilities_taxes",
+      "statement": "balance_liabilities",
+      "parentKey": "other_liabilities",
+      "labelDe": "davon aus Steuern",
+      "unit": "EUR",
+      "values": {
+        "2018": 14955.75,
+        "2019": 39463.78,
+        "2020": 24019.86,
+        "2021": 38535.4,
+        "2022": 112687.87,
+        "2023": 63306.44,
+        "2024": 7827.75
+      },
+      "emphasis": "memo"
+    },
+    {
+      "key": "total_equity_and_liabilities",
+      "statement": "balance_liabilities",
+      "labelDe": "Bilanzsumme",
+      "unit": "EUR",
+      "values": {
+        "2018": 9170642.89,
+        "2019": 8668376.65,
+        "2020": 9526628.39,
+        "2021": 9641120.22,
+        "2022": 10009169.39,
+        "2023": 10454082.46,
+        "2024": 9926371.56
+      },
+      "emphasis": "total"
+    },
+    {
+      "key": "revenue",
+      "statement": "income",
+      "labelDe": "Umsatzerlöse",
+      "unit": "EUR",
+      "values": {
+        "2018": 2331427.93,
+        "2019": 2199413.97,
+        "2020": 1995014.47,
+        "2021": 2210005.26,
+        "2022": 2111494.9,
+        "2023": 1766053.0,
+        "2024": 2074189.84
+      },
+      "numberLabel": "1.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "1."
+        },
+        "2020": {
+          "numberLabel": "1."
+        },
+        "2021": {
+          "numberLabel": "1."
+        },
+        "2022": {
+          "numberLabel": "1."
+        }
+      }
+    },
+    {
+      "key": "change_in_work_in_progress",
+      "statement": "income",
+      "labelDe": "Verminderung des Bestandes in Arbeit befindlicher Aufträge",
+      "unit": "EUR",
+      "values": {
+        "2018": 0.0,
+        "2019": 0.0,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 31300.0,
+        "2024": -31300.0
+      },
+      "note": "Printed as 31.300,00 (2024) and -31.300,00 (2023) under the label 'Verminderung'. Stored with economic sign (positive = adds to result); confirmed by the income statement arithmetic.",
+      "numberLabel": "2.",
+      "printSign": -1,
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ]
+    },
+    {
+      "key": "other_operating_income",
+      "statement": "income",
+      "labelDe": "Sonstige betriebliche Erträge",
+      "unit": "EUR",
+      "values": {
+        "2018": 494694.56,
+        "2019": 486708.18,
+        "2020": 506717.45,
+        "2021": 1121587.18,
+        "2022": 599094.85,
+        "2023": 639918.09,
+        "2024": 643133.29
+      },
+      "numberLabel": "3.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "2."
+        },
+        "2020": {
+          "numberLabel": "2."
+        },
+        "2021": {
+          "numberLabel": "2."
+        },
+        "2022": {
+          "numberLabel": "2."
+        }
+      }
+    },
+    {
+      "key": "material_expenses_total",
+      "statement": "income",
+      "labelDe": "Materialaufwand",
+      "unit": "EUR",
+      "values": {
+        "2018": 244499.34,
+        "2019": 197207.72,
+        "2020": 180210.51,
+        "2021": 225456.09,
+        "2022": 238640.14,
+        "2023": 169565.85,
+        "2024": 243850.95
+      },
+      "numberLabel": "4.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "3."
+        },
+        "2020": {
+          "numberLabel": "3."
+        },
+        "2021": {
+          "numberLabel": "3."
+        },
+        "2022": {
+          "numberLabel": "3."
+        }
+      }
+    },
+    {
+      "key": "material_raw_supplies",
+      "statement": "income",
+      "parentKey": "material_expenses_total",
+      "labelDe": "Aufwendungen für Roh-, Hilfs- und Betriebsstoffe und für bezogene Waren",
+      "unit": "EUR",
+      "values": {
+        "2018": 110848.19,
+        "2019": 90059.34,
+        "2020": 74629.83,
+        "2021": 92369.79,
+        "2022": 104830.97,
+        "2023": 66769.93,
+        "2024": 116559.18
+      },
+      "numberLabel": "a)"
+    },
+    {
+      "key": "material_purchased_services",
+      "statement": "income",
+      "parentKey": "material_expenses_total",
+      "labelDe": "Aufwendungen für bezogene Leistungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 133651.15,
+        "2019": 107148.38,
+        "2020": 105580.68,
+        "2021": 133086.3,
+        "2022": 133809.17,
+        "2023": 102795.92,
+        "2024": 127291.77
+      },
+      "numberLabel": "b)"
+    },
+    {
+      "key": "personnel_expenses_total",
+      "statement": "income",
+      "labelDe": "Personalaufwand",
+      "unit": "EUR",
+      "values": {
+        "2018": 2053176.98,
+        "2019": 2016897.13,
+        "2020": 2337494.35,
+        "2021": 2348536.99,
+        "2022": 2580094.56,
+        "2023": 2690185.54,
+        "2024": 2649799.05
+      },
+      "numberLabel": "5.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "4."
+        },
+        "2020": {
+          "numberLabel": "4."
+        },
+        "2021": {
+          "numberLabel": "4."
+        },
+        "2022": {
+          "numberLabel": "4."
+        }
+      }
+    },
+    {
+      "key": "wages_salaries",
+      "statement": "income",
+      "parentKey": "personnel_expenses_total",
+      "labelDe": "Löhne und Gehälter",
+      "unit": "EUR",
+      "values": {
+        "2018": 1694177.47,
+        "2019": 1652896.05,
+        "2020": 1909132.52,
+        "2021": 1925851.18,
+        "2022": 2125256.23,
+        "2023": 2206126.86,
+        "2024": 2178781.35
+      },
+      "numberLabel": "a)"
+    },
+    {
+      "key": "social_security_pension",
+      "statement": "income",
+      "parentKey": "personnel_expenses_total",
+      "labelDe": "Soziale Abgaben und Aufwendungen für Altersversorgung und für Unterstützung",
+      "unit": "EUR",
+      "values": {
+        "2018": 358999.51,
+        "2019": 364001.08,
+        "2020": 428361.83,
+        "2021": 422685.81,
+        "2022": 454838.33,
+        "2023": 484058.68,
+        "2024": 471017.7
+      },
+      "numberLabel": "b)"
+    },
+    {
+      "key": "pension_expenses",
+      "statement": "income",
+      "parentKey": "social_security_pension",
+      "labelDe": "davon für Altersversorgung",
+      "unit": "EUR",
+      "values": {
+        "2018": 40247.72,
+        "2019": 42629.6,
+        "2020": 42036.9,
+        "2021": 48419.51,
+        "2022": 48924.91,
+        "2023": 63257.17,
+        "2024": 26125.25
+      },
+      "emphasis": "memo"
+    },
+    {
+      "key": "depreciation",
+      "statement": "income",
+      "labelDe": "Abschreibungen auf immaterielle Vermögensgegenstände des Anlagevermögens und Sachanlagen",
+      "unit": "EUR",
+      "values": {
+        "2018": 498304.85,
+        "2019": 470875.28,
+        "2020": 478228.13,
+        "2021": 620432.05,
+        "2022": 615727.53,
+        "2023": 703742.94,
+        "2024": 672991.18
+      },
+      "numberLabel": "6.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "5."
+        },
+        "2020": {
+          "numberLabel": "5."
+        },
+        "2021": {
+          "numberLabel": "5."
+        },
+        "2022": {
+          "numberLabel": "5."
+        }
+      }
+    },
+    {
+      "key": "other_operating_expenses",
+      "statement": "income",
+      "labelDe": "Sonstige betriebliche Aufwendungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 748014.35,
+        "2019": 728228.64,
+        "2020": 828212.49,
+        "2021": 1039989.19,
+        "2022": 1147462.75,
+        "2023": 1053495.42,
+        "2024": 1168132.15
+      },
+      "numberLabel": "7.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "6."
+        },
+        "2020": {
+          "numberLabel": "6."
+        },
+        "2021": {
+          "numberLabel": "6."
+        },
+        "2022": {
+          "numberLabel": "6."
+        }
+      }
+    },
+    {
+      "key": "interest_income",
+      "statement": "income",
+      "labelDe": "Sonstige Zinsen und ähnliche Erträge",
+      "unit": "EUR",
+      "values": {
+        "2018": 34.0,
+        "2019": 302.0,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 98.0
+      },
+      "numberLabel": "8.",
+      "absentIn": [
+        "2021",
+        "2022"
+      ],
+      "layouts": {
+        "2019": {
+          "numberLabel": "7."
+        },
+        "2020": {
+          "numberLabel": "7."
+        }
+      }
+    },
+    {
+      "key": "interest_expense",
+      "statement": "income",
+      "labelDe": "Zinsen und ähnliche Aufwendungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 3243.11,
+        "2019": 68.03,
+        "2020": 4437.96,
+        "2021": 9259.86,
+        "2022": 7263.82,
+        "2023": 600.06,
+        "2024": 9516.22
+      },
+      "numberLabel": "9.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "8."
+        },
+        "2020": {
+          "numberLabel": "8."
+        },
+        "2021": {
+          "numberLabel": "7."
+        },
+        "2022": {
+          "numberLabel": "7."
+        }
+      }
+    },
+    {
+      "key": "income_taxes",
+      "statement": "income",
+      "labelDe": "Steuern vom Einkommen und vom Ertrag",
+      "unit": "EUR",
+      "values": {
+        "2018": 18133.9,
+        "2019": 11736.26,
+        "2020": -3557.18,
+        "2021": 10587.78,
+        "2022": -10419.26,
+        "2023": 0.0,
+        "2024": -6744.61
+      },
+      "note": "Negative expense = tax refund",
+      "numberLabel": "10.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "9."
+        },
+        "2020": {
+          "numberLabel": "9."
+        },
+        "2021": {
+          "numberLabel": "8."
+        },
+        "2022": {
+          "numberLabel": "8."
+        }
+      }
+    },
+    {
+      "key": "result_after_taxes",
+      "statement": "income",
+      "labelDe": "Ergebnis nach Steuern",
+      "unit": "EUR",
+      "values": {
+        "2018": -739216.04,
+        "2019": -738588.91,
+        "2020": -1323294.34,
+        "2021": -922669.52,
+        "2022": -1868179.79,
+        "2023": -2180318.72,
+        "2024": -2051423.81
+      },
+      "numberLabel": "11.",
+      "emphasis": "subtotal",
+      "layouts": {
+        "2019": {
+          "numberLabel": "10."
+        },
+        "2020": {
+          "numberLabel": "10."
+        },
+        "2021": {
+          "numberLabel": "9."
+        },
+        "2022": {
+          "numberLabel": "9."
+        }
+      }
+    },
+    {
+      "key": "other_taxes",
+      "statement": "income",
+      "labelDe": "Sonstige Steuern",
+      "unit": "EUR",
+      "values": {
+        "2018": 405.78,
+        "2019": 344.0,
+        "2020": 21.23,
+        "2021": 61.33,
+        "2022": 70.67,
+        "2023": 66.0,
+        "2024": 400.0
+      },
+      "numberLabel": "12.",
+      "layouts": {
+        "2019": {
+          "numberLabel": "11."
+        },
+        "2020": {
+          "numberLabel": "11."
+        },
+        "2021": {
+          "numberLabel": "10."
+        },
+        "2022": {
+          "numberLabel": "10."
+        }
+      }
+    },
+    {
+      "key": "net_result",
+      "statement": "income",
+      "labelDe": "Jahresfehlbetrag",
+      "unit": "EUR",
+      "values": {
+        "2018": -739621.82,
+        "2019": -738932.91,
+        "2020": -1323315.57,
+        "2021": -922730.85,
+        "2022": -1868250.46,
+        "2023": -2180384.72,
+        "2024": -2051823.81
+      },
+      "note": "Printed as a positive loss amount; stored negative (economic sign)",
+      "numberLabel": "13.",
+      "emphasis": "total",
+      "printSign": -1,
+      "layouts": {
+        "2019": {
+          "printSign": 1,
+          "numberLabel": "12."
+        },
+        "2020": {
+          "printSign": 1,
+          "numberLabel": "12."
+        },
+        "2021": {
+          "printSign": 1,
+          "numberLabel": "11."
+        },
+        "2022": {
+          "printSign": 1,
+          "numberLabel": "11."
+        }
+      }
+    },
+    {
+      "key": "loss_carryforward",
+      "statement": "income",
+      "labelDe": "Verlustvortrag aus dem Vorjahr",
+      "unit": "EUR",
+      "numberLabel": "12.",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": -738932.91,
+        "2021": -1323315.57,
+        "2022": -922730.85,
+        "2023": null,
+        "2024": null
+      },
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "capital_reserve_withdrawal",
+      "statement": "income",
+      "labelDe": "Entnahmen aus der Kapitalrücklage",
+      "unit": "EUR",
+      "numberLabel": "13.",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 738932.91,
+        "2021": 1323315.57,
+        "2022": 922730.85,
+        "2023": null,
+        "2024": null
+      },
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "balance_sheet_loss",
+      "statement": "income",
+      "labelDe": "Bilanzverlust",
+      "unit": "EUR",
+      "numberLabel": "14.",
+      "emphasis": "total",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": -1323315.57,
+        "2021": -922730.85,
+        "2022": -1868250.46,
+        "2023": null,
+        "2024": null
+      },
+      "absentIn": [
+        "2018",
+        "2019",
+        "2020",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "key": "revenue_project_grants",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Projektzuschüsse",
+      "unit": "EUR",
+      "values": {
+        "2018": 730027.96,
+        "2019": 764028.42,
+        "2020": 923680.75,
+        "2021": 974428.15,
+        "2022": 922861.69,
+        "2023": 601646.45,
+        "2024": 605843.85
+      }
+    },
+    {
+      "key": "revenue_testing",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Physikalische und chemische Prüfungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 1033775.08,
+        "2019": 1031291.58,
+        "2020": 795565.38,
+        "2021": 860107.84,
+        "2022": 763074.31,
+        "2023": 819369.04,
+        "2024": 1076872.84
+      }
+    },
+    {
+      "key": "revenue_cost_reimbursements",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Nebenkostenerstattungen",
+      "unit": "EUR",
+      "values": {
+        "2018": 147160.75,
+        "2019": 178859.85,
+        "2020": 199509.98,
+        "2021": 218638.63,
+        "2022": 245961.14,
+        "2023": 226254.18,
+        "2024": 250266.35
+      }
+    },
+    {
+      "key": "revenue_research_consulting",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Forschung, Entwicklung und Beratung",
+      "unit": "EUR",
+      "values": {
+        "2018": 382124.14,
+        "2019": 216053.79,
+        "2020": 67596.97,
+        "2021": 153548.19,
+        "2022": 179597.76,
+        "2023": 98958.19,
+        "2024": 30849.69
+      }
+    },
+    {
+      "key": "revenue_seminars",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Umsatz Seminare",
+      "unit": "EUR",
+      "values": {
+        "2018": 23340.0,
+        "2019": 8239.0,
+        "2020": 8635.0,
+        "2021": 87.5,
+        "2022": 0.0,
+        "2023": 2773.1,
+        "2024": 17580.0
+      }
+    },
+    {
+      "key": "revenue_other",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Sonstige Umsatzerlöse",
+      "unit": "EUR",
+      "values": {
+        "2018": 15000.0,
+        "2019": 941.33,
+        "2020": 26.39,
+        "2021": 3194.95,
+        "2022": 0.0,
+        "2023": 17052.04,
+        "2024": 92777.11
+      }
+    },
+    {
+      "key": "revenue_share_domestic",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Umsatzerlöse im Inland (Anteil)",
+      "unit": "pct",
+      "values": {
+        "2018": null,
+        "2019": 100.0,
+        "2020": 100.0,
+        "2021": 93.4,
+        "2022": 91.6,
+        "2023": 92.0,
+        "2024": 88.9
+      }
+    },
+    {
+      "key": "revenue_share_foreign",
+      "statement": "notes",
+      "parentKey": "revenue",
+      "labelDe": "Umsatzerlöse im Ausland (Anteil)",
+      "unit": "pct",
+      "values": {
+        "2018": null,
+        "2019": 0.0,
+        "2020": 0.0,
+        "2021": 6.6,
+        "2022": 8.4,
+        "2023": 8.0,
+        "2024": 11.1
+      }
+    },
+    {
+      "key": "prior_period_income",
+      "statement": "notes",
+      "labelDe": "Sonstige betriebliche Erträge, die einem anderen Geschäftsjahr zuzurechnen sind",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 576,
+        "2022": 52,
+        "2023": 4,
+        "2024": 4
+      }
+    },
+    {
+      "key": "prior_period_expenses",
+      "statement": "notes",
+      "labelDe": "Sonstige betriebliche Aufwendungen, die einem anderen Geschäftsjahr zuzurechnen sind",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 279,
+        "2022": 7,
+        "2023": 172,
+        "2024": 33
+      }
+    },
+    {
+      "key": "auditor_fee_total",
+      "statement": "notes",
+      "labelDe": "Gesamthonorar des Abschlussprüfers",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 8500.0,
+        "2020": 8500.0,
+        "2021": 12641.65,
+        "2022": 15159.75,
+        "2023": 7982.0,
+        "2024": null
+      },
+      "note": "Redacted in the source"
+    },
+    {
+      "key": "auditor_fee_prior_year_portion",
+      "statement": "notes",
+      "parentKey": "auditor_fee_total",
+      "labelDe": "davon für das Vorjahr (Abschlussprüfungsleistungen)",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 6641.65,
+        "2022": 9028.5,
+        "2023": 2939.98,
+        "2024": 332.98
+      }
+    },
+    {
+      "key": "capital_reserve_opening",
+      "statement": "notes",
+      "parentKey": "capital_reserve",
+      "labelDe": "Kapitalrücklage: Stand 01.01.",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 2436085.8,
+        "2020": 2435623.62,
+        "2021": 2936181.85,
+        "2022": 2550037.22,
+        "2023": 3086180.33,
+        "2024": 3230180.33
+      }
+    },
+    {
+      "key": "capital_reserve_addition",
+      "statement": "notes",
+      "parentKey": "capital_reserve",
+      "labelDe": "Kapitalrücklage: Zuführung",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 739159.64,
+        "2020": 1239491.14,
+        "2021": 937170.94,
+        "2022": 1458873.96,
+        "2023": 2012250.46,
+        "2024": 2304489.96
+      }
+    },
+    {
+      "key": "capital_reserve_loss_offset",
+      "statement": "notes",
+      "parentKey": "capital_reserve",
+      "labelDe": "Kapitalrücklage: Verrechnung mit dem Verlustvortrag",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": -739621.82,
+        "2020": -738932.91,
+        "2021": -1323315.57,
+        "2022": -922730.85,
+        "2023": -1868250.46,
+        "2024": -2180384.72
+      }
+    },
+    {
+      "key": "capital_reserve_closing",
+      "statement": "notes",
+      "parentKey": "capital_reserve",
+      "labelDe": "Kapitalrücklage: Stand 31.12.",
+      "unit": "EUR",
+      "values": {
+        "2018": 2436085.8,
+        "2019": 2435623.62,
+        "2020": 2936181.85,
+        "2021": 2550037.22,
+        "2022": 3086180.33,
+        "2023": 3230180.33,
+        "2024": 3354285.57
+      }
+    },
+    {
+      "key": "special_item_opening",
+      "statement": "notes",
+      "parentKey": "special_item_grants",
+      "labelDe": "Sonderposten für Zuschüsse: Stand 01.01.",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 6512837.83,
+        "2020": 6191960.55,
+        "2021": 6316187.83,
+        "2022": 6337141.0,
+        "2023": 6854233.09,
+        "2024": 7371848.0
+      }
+    },
+    {
+      "key": "special_item_addition",
+      "statement": "notes",
+      "parentKey": "special_item_grants",
+      "labelDe": "Sonderposten für Zuschüsse: Zuführung",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 150000.0,
+        "2020": 523679.03,
+        "2021": 1119216.35,
+        "2022": 1062116.55,
+        "2023": 1151023.82,
+        "2024": 197992.34
+      }
+    },
+    {
+      "key": "special_item_release",
+      "statement": "notes",
+      "parentKey": "special_item_grants",
+      "labelDe": "Sonderposten für Zuschüsse: Auflösung",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": -470877.28,
+        "2020": -440424.94,
+        "2021": -542895.81,
+        "2022": -545024.46,
+        "2023": -633408.91,
+        "2024": -629082.43
+      }
+    },
+    {
+      "key": "special_item_closing",
+      "statement": "notes",
+      "parentKey": "special_item_grants",
+      "labelDe": "Sonderposten für Zuschüsse: Stand 31.12.",
+      "unit": "EUR",
+      "values": {
+        "2018": 6512837.83,
+        "2019": 6191960.55,
+        "2020": 6316187.83,
+        "2021": 6337141.0,
+        "2022": 6854233.09,
+        "2023": 7371848.0,
+        "2024": 6940757.91
+      }
+    },
+    {
+      "key": "provisions_vacation",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für Urlaub",
+      "unit": "TEUR",
+      "values": {
+        "2018": 18.5,
+        "2019": 26.3,
+        "2020": 35,
+        "2021": 48,
+        "2022": 55,
+        "2023": 60,
+        "2024": 72
+      }
+    },
+    {
+      "key": "provisions_overtime",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für Überstunden",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": null,
+        "2023": 30,
+        "2024": 39
+      }
+    },
+    {
+      "key": "provisions_bonuses",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für Bonuszahlungen für Mitarbeiter",
+      "unit": "TEUR",
+      "values": {
+        "2018": 39.0,
+        "2019": 31.7,
+        "2020": 43.5,
+        "2021": 35,
+        "2022": 34,
+        "2023": 15,
+        "2024": 28
+      }
+    },
+    {
+      "key": "provisions_other_personnel",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für sonstige Personalkosten",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": 36,
+        "2023": 67,
+        "2024": 0
+      }
+    },
+    {
+      "key": "provisions_audit_costs",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für Jahresabschlusserstellung und -prüfung",
+      "unit": "TEUR",
+      "values": {
+        "2018": 8.5,
+        "2019": 11,
+        "2020": 11,
+        "2021": 22,
+        "2022": 22,
+        "2023": 17,
+        "2024": 22
+      }
+    },
+    {
+      "key": "provisions_outstanding_invoices",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen für ausstehende Rechnungen",
+      "unit": "TEUR",
+      "values": {
+        "2018": 92.0,
+        "2019": 49.8,
+        "2020": 57.4,
+        "2021": 0,
+        "2022": 70,
+        "2023": 45,
+        "2024": 64
+      }
+    },
+    {
+      "key": "liabilities_to_shareholders_unused_grants",
+      "statement": "notes",
+      "parentKey": "unused_grants_liabilities",
+      "labelDe": "davon Verbindlichkeiten gegenüber Gesellschaftern (nicht verwendete Zuschüsse)",
+      "unit": "EUR",
+      "values": {
+        "2018": 150000.0,
+        "2019": 0.0,
+        "2020": 66853.82,
+        "2021": 56625.28,
+        "2022": 14468.01,
+        "2023": 0.0,
+        "2024": 24000.0
+      }
+    },
+    {
+      "key": "headcount_avg",
+      "statement": "notes",
+      "labelDe": "Durchschnittliche Zahl der Arbeitnehmer (§ 267 Abs. 5 HGB)",
+      "unit": "count",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 43,
+        "2021": 45,
+        "2022": 39,
+        "2023": 38,
+        "2024": 38
+      }
+    },
+    {
+      "key": "executive_compensation",
+      "statement": "notes",
+      "labelDe": "Gesamtbezüge der Geschäftsführung",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": null,
+        "2023": 121.9,
+        "2024": 124.0
+      }
+    },
+    {
+      "key": "supervisory_board_compensation",
+      "statement": "notes",
+      "labelDe": "Gesamtbezüge des Aufsichtsrats",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": null,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_advance_payments_lt1y",
+      "statement": "notes",
+      "parentKey": "advance_payments_received",
+      "labelDe": "Erhaltene Anzahlungen auf Bestellungen: Restlaufzeit bis zu 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 6076.47,
+        "2021": 8749.0,
+        "2022": 0.0,
+        "2023": 44062.4,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_advance_payments_gt1y",
+      "statement": "notes",
+      "parentKey": "advance_payments_received",
+      "labelDe": "Erhaltene Anzahlungen auf Bestellungen: Restlaufzeit mehr als 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_advance_payments_gt5y",
+      "statement": "notes",
+      "parentKey": "advance_payments_received",
+      "labelDe": "Erhaltene Anzahlungen auf Bestellungen: davon Restlaufzeit mehr als 5 Jahre",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_trade_payables_lt1y",
+      "statement": "notes",
+      "parentKey": "trade_payables",
+      "labelDe": "Verbindlichkeiten aus Lieferungen und Leistungen: Restlaufzeit bis zu 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 400615.31,
+        "2021": 86821.24,
+        "2022": 215294.1,
+        "2023": 315214.87,
+        "2024": 51113.51
+      }
+    },
+    {
+      "key": "maturity_trade_payables_gt1y",
+      "statement": "notes",
+      "parentKey": "trade_payables",
+      "labelDe": "Verbindlichkeiten aus Lieferungen und Leistungen: Restlaufzeit mehr als 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_trade_payables_gt5y",
+      "statement": "notes",
+      "parentKey": "trade_payables",
+      "labelDe": "Verbindlichkeiten aus Lieferungen und Leistungen: davon Restlaufzeit mehr als 5 Jahre",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_unused_grants_lt1y",
+      "statement": "notes",
+      "parentKey": "unused_grants_liabilities",
+      "labelDe": "Verbindlichkeiten aus noch nicht verwendeten Zuschüssen: Restlaufzeit bis zu 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 66853.82,
+        "2021": 56625.28,
+        "2022": 14468.01,
+        "2023": 0.0,
+        "2024": 24000.0
+      }
+    },
+    {
+      "key": "maturity_unused_grants_gt1y",
+      "statement": "notes",
+      "parentKey": "unused_grants_liabilities",
+      "labelDe": "Verbindlichkeiten aus noch nicht verwendeten Zuschüssen: Restlaufzeit mehr als 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_unused_grants_gt5y",
+      "statement": "notes",
+      "parentKey": "unused_grants_liabilities",
+      "labelDe": "Verbindlichkeiten aus noch nicht verwendeten Zuschüssen: davon Restlaufzeit mehr als 5 Jahre",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_other_liabilities_lt1y",
+      "statement": "notes",
+      "parentKey": "other_liabilities",
+      "labelDe": "Sonstige Verbindlichkeiten: Restlaufzeit bis zu 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 24834.47,
+        "2021": 39128.02,
+        "2022": 113389.92,
+        "2023": 63943.24,
+        "2024": 9068.75
+      }
+    },
+    {
+      "key": "maturity_other_liabilities_gt1y",
+      "statement": "notes",
+      "parentKey": "other_liabilities",
+      "labelDe": "Sonstige Verbindlichkeiten: Restlaufzeit mehr als 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_other_liabilities_gt5y",
+      "statement": "notes",
+      "parentKey": "other_liabilities",
+      "labelDe": "Sonstige Verbindlichkeiten: davon Restlaufzeit mehr als 5 Jahre",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "prior_period_exp_grant_repayment",
+      "statement": "notes",
+      "parentKey": "prior_period_expenses",
+      "labelDe": "Rückzahlung von in Vorjahren gewährten Zuschüssen",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": null,
+        "2023": 78,
+        "2024": 20
+      }
+    },
+    {
+      "key": "prior_period_exp_vat",
+      "statement": "notes",
+      "parentKey": "prior_period_expenses",
+      "labelDe": "Umsatzsteuernachzahlungen für Vorjahre",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": null,
+        "2023": 0,
+        "2024": 7
+      }
+    },
+    {
+      "key": "prior_period_exp_receivable_writeoff",
+      "statement": "notes",
+      "parentKey": "prior_period_expenses",
+      "labelDe": "Ausbuchung einer Forderung aus einem Mittelabruf",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 269,
+        "2022": null,
+        "2023": 79,
+        "2024": 0
+      }
+    },
+    {
+      "key": "special_item_correction",
+      "statement": "notes",
+      "parentKey": "special_item_grants",
+      "labelDe": "Sonderposten: Korrektur",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": 0.0,
+        "2020": 40973.19,
+        "2021": -555367.37,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "provisions_severance",
+      "statement": "notes",
+      "parentKey": "provisions_total",
+      "labelDe": "Rückstellungen: Abfindungen",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 50,
+        "2021": 0,
+        "2022": null,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "prior_period_inc_special_item_correction",
+      "statement": "notes",
+      "parentKey": "prior_period_income",
+      "labelDe": "Korrektur des Sonderpostens für Investitionszuschüsse",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 555,
+        "2022": null,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "prior_period_inc_provision_release",
+      "statement": "notes",
+      "parentKey": "prior_period_income",
+      "labelDe": "Auflösung von Rückstellungen",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 12,
+        "2022": null,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "prior_period_inc_liability_writeoff",
+      "statement": "notes",
+      "parentKey": "prior_period_income",
+      "labelDe": "Ausbuchung von Verbindlichkeiten",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": 9,
+        "2022": null,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "prior_period_inc_settlement",
+      "statement": "notes",
+      "parentKey": "prior_period_income",
+      "labelDe": "Vergleich im Rahmen eines Rechtsstreits",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": 33,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "prior_period_inc_vat",
+      "statement": "notes",
+      "parentKey": "prior_period_income",
+      "labelDe": "Nachträglich abziehbare Vorsteuer",
+      "unit": "TEUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": null,
+        "2021": null,
+        "2022": 19,
+        "2023": null,
+        "2024": null
+      }
+    },
+    {
+      "key": "maturity_bank_lt1y",
+      "statement": "notes",
+      "parentKey": "bank_liabilities",
+      "labelDe": "Verbindlichkeiten gegenüber Kreditinstituten: bis 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 332342.01,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_bank_gt1y",
+      "statement": "notes",
+      "parentKey": "bank_liabilities",
+      "labelDe": "Verbindlichkeiten gegenüber Kreditinstituten: mehr als 1 Jahr",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    },
+    {
+      "key": "maturity_bank_gt5y",
+      "statement": "notes",
+      "parentKey": "bank_liabilities",
+      "labelDe": "Verbindlichkeiten gegenüber Kreditinstituten: mehr als 5 Jahre",
+      "unit": "EUR",
+      "values": {
+        "2018": null,
+        "2019": null,
+        "2020": 0.0,
+        "2021": 0.0,
+        "2022": 0.0,
+        "2023": 0.0,
+        "2024": 0.0
+      }
+    }
+  ],
+  "derivedKpis": [
+    {
+      "key": "revenue_growth",
+      "labelDe": "Umsatzwachstum",
+      "formula": "revenue / revenue[prev] - 1",
+      "unit": "pct"
+    },
+    {
+      "key": "equity_ratio",
+      "labelDe": "Eigenkapitalquote",
+      "formula": "equity_total / total_assets",
+      "unit": "pct"
+    },
+    {
+      "key": "personnel_cost_per_employee",
+      "labelDe": "Personalaufwand je Mitarbeiter",
+      "formula": "personnel_expenses_total / headcount_avg",
+      "unit": "EUR"
+    },
+    {
+      "key": "revenue_per_employee",
+      "labelDe": "Umsatz je Mitarbeiter",
+      "formula": "revenue / headcount_avg",
+      "unit": "EUR"
+    },
+    {
+      "key": "net_loss_change",
+      "labelDe": "Veränderung des Jahresfehlbetrags",
+      "formula": "net_result - net_result[prev]",
+      "unit": "EUR"
+    }
+  ],
+  "checks": [
+    {
+      "id": "balance_sums_equal",
+      "labelDe": "Bilanzsumme Aktiva = Passiva",
+      "lhs": "total_assets",
+      "rhs": "total_equity_and_liabilities",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "assets_composition",
+      "labelDe": "Anlage- + Umlaufvermögen + RAP = Bilanzsumme",
+      "lhs": "fixed_assets_total + current_assets_total + prepaid_expenses",
+      "rhs": "total_assets",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "liabilities_composition",
+      "labelDe": "Eigenkapital + Sonderposten + Rückstellungen + Verbindlichkeiten = Bilanzsumme",
+      "lhs": "equity_total + special_item_grants + provisions_total + liabilities_total",
+      "rhs": "total_equity_and_liabilities",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "equity_composition",
+      "labelDe": "Eigenkapital = Kapital + Rücklage + Jahresergebnis",
+      "lhs": "subscribed_capital + capital_reserve + net_result_balance",
+      "rhs": "equity_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "tangible_assets_sum",
+      "labelDe": "Sachanlagen Summe",
+      "lhs": "land_buildings + technical_equipment + other_equipment + construction_in_progress",
+      "rhs": "tangible_assets_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "fixed_assets_sum",
+      "labelDe": "Anlagevermögen Summe",
+      "lhs": "intangible_assets + tangible_assets_total",
+      "rhs": "fixed_assets_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "inventories_sum",
+      "labelDe": "Vorräte Summe",
+      "lhs": "raw_materials + work_in_progress + inventory_advance_payments",
+      "rhs": "inventories_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "receivables_sum",
+      "labelDe": "Forderungen Summe",
+      "lhs": "trade_receivables + grantor_receivables + shareholder_receivables + other_assets",
+      "rhs": "receivables_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "current_assets_sum",
+      "labelDe": "Umlaufvermögen Summe",
+      "lhs": "inventories_total + receivables_total + cash",
+      "rhs": "current_assets_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "liabilities_sum",
+      "labelDe": "Verbindlichkeiten Summe",
+      "lhs": "bank_liabilities + advance_payments_received + trade_payables + unused_grants_liabilities + other_liabilities",
+      "rhs": "liabilities_total",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "material_sum",
+      "labelDe": "Materialaufwand Summe",
+      "lhs": "material_raw_supplies + material_purchased_services",
+      "rhs": "material_expenses_total",
+      "views": [
+        "income"
+      ]
+    },
+    {
+      "id": "personnel_sum",
+      "labelDe": "Personalaufwand Summe",
+      "lhs": "wages_salaries + social_security_pension",
+      "rhs": "personnel_expenses_total",
+      "views": [
+        "income"
+      ]
+    },
+    {
+      "id": "income_chain",
+      "labelDe": "GuV-Kette bis Ergebnis nach Steuern",
+      "lhs": "revenue + change_in_work_in_progress + other_operating_income - material_expenses_total - personnel_expenses_total - depreciation - other_operating_expenses + interest_income - interest_expense - income_taxes",
+      "rhs": "result_after_taxes",
+      "views": [
+        "income"
+      ]
+    },
+    {
+      "id": "net_result_chain",
+      "labelDe": "Ergebnis nach Steuern - sonstige Steuern = Jahresergebnis",
+      "lhs": "result_after_taxes - other_taxes",
+      "rhs": "net_result",
+      "views": [
+        "income"
+      ]
+    },
+    {
+      "id": "net_result_matches_balance",
+      "labelDe": "Jahresergebnis GuV = Bilanz",
+      "lhs": "net_result",
+      "rhs": "net_result_balance",
+      "views": [
+        "balance",
+        "income"
+      ]
+    },
+    {
+      "id": "revenue_breakdown_sum",
+      "labelDe": "Umsatzerlöse nach Tätigkeitsbereichen = Umsatzerlöse",
+      "lhs": "revenue_project_grants + revenue_testing + revenue_cost_reimbursements + revenue_research_consulting + revenue_seminars + revenue_other",
+      "rhs": "revenue",
+      "views": [
+        "income"
+      ]
+    },
+    {
+      "id": "capital_reserve_rollforward",
+      "labelDe": "Kapitalrücklage Fortschreibung",
+      "lhs": "capital_reserve_opening + capital_reserve_addition + capital_reserve_loss_offset",
+      "rhs": "capital_reserve_closing",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "capital_reserve_matches_balance",
+      "labelDe": "Kapitalrücklage Anhang = Bilanz",
+      "lhs": "capital_reserve_closing",
+      "rhs": "capital_reserve",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "special_item_rollforward",
+      "labelDe": "Sonderposten Fortschreibung",
+      "lhs": "special_item_opening + special_item_addition + special_item_correction + special_item_release",
+      "rhs": "special_item_closing",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "special_item_matches_balance",
+      "labelDe": "Sonderposten Anhang = Bilanz",
+      "lhs": "special_item_closing",
+      "rhs": "special_item_grants",
+      "views": [
+        "balance"
+      ]
+    },
+    {
+      "id": "domestic_foreign_100",
+      "labelDe": "Inland + Ausland = 100 %",
+      "lhs": "revenue_share_domestic + revenue_share_foreign",
+      "rhs": "100",
+      "views": [
+        "income"
+      ],
+      "periods": [
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_advance_payments",
+      "labelDe": "Restlaufzeiten: Erhaltene Anzahlungen auf Bestellungen",
+      "lhs": "maturity_advance_payments_lt1y + maturity_advance_payments_gt1y",
+      "rhs": "advance_payments_received",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_trade_payables",
+      "labelDe": "Restlaufzeiten: Verbindlichkeiten aus Lieferungen und Leistungen",
+      "lhs": "maturity_trade_payables_lt1y + maturity_trade_payables_gt1y",
+      "rhs": "trade_payables",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_unused_grants",
+      "labelDe": "Restlaufzeiten: Verbindlichkeiten aus noch nicht verwendeten Zuschüssen",
+      "lhs": "maturity_unused_grants_lt1y + maturity_unused_grants_gt1y",
+      "rhs": "unused_grants_liabilities",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_other_liabilities",
+      "labelDe": "Restlaufzeiten: Sonstige Verbindlichkeiten",
+      "lhs": "maturity_other_liabilities_lt1y + maturity_other_liabilities_gt1y",
+      "rhs": "other_liabilities",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_total_lt1y",
+      "labelDe": "Restlaufzeit bis 1 Jahr: Summe = Verbindlichkeiten",
+      "lhs": "maturity_bank_lt1y + maturity_advance_payments_lt1y + maturity_trade_payables_lt1y + maturity_unused_grants_lt1y + maturity_other_liabilities_lt1y",
+      "rhs": "liabilities_total",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "maturity_bank",
+      "labelDe": "Verbindlichkeiten ggü. Kreditinstituten: Restlaufzeiten = Bilanzwert",
+      "lhs": "maturity_bank_lt1y + maturity_bank_gt1y",
+      "rhs": "bank_liabilities",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ]
+    },
+    {
+      "id": "provisions_sum",
+      "labelDe": "Rückstellungen: Steuer- und sonstige Rückstellungen = Summe",
+      "lhs": "tax_provisions + other_provisions",
+      "rhs": "provisions_total",
+      "views": [
+        "balance"
+      ],
+      "periods": [
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ]
+    },
+    {
+      "id": "balance_sheet_loss_chain",
+      "labelDe": "Bilanzverlust = Jahresfehlbetrag + Verlustvortrag + Entnahme aus der Kapitalrücklage",
+      "lhs": "net_result + loss_carryforward + capital_reserve_withdrawal",
+      "rhs": "balance_sheet_loss",
+      "views": [
+        "income"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022"
+      ]
+    },
+    {
+      "id": "balance_sheet_loss_matches",
+      "labelDe": "Bilanzverlust (GuV) = Ausweis im Eigenkapital",
+      "lhs": "balance_sheet_loss",
+      "rhs": "net_result_balance",
+      "views": [
+        "balance",
+        "income"
+      ],
+      "periods": [
+        "2020",
+        "2021",
+        "2022"
+      ]
+    }
+  ],
+  "notes": [
+    {
+      "view": "balance",
+      "textDe": "Die Forderungen und sonstigen Vermögensgegenstände beinhalten keine Forderungen mit einer Restlaufzeit von mehr als einem Jahr."
+    },
+    {
+      "view": "balance",
+      "textDe": "Die Forderungen an Zuschussgeber (14.458,36 €; Vorjahr 282.652,20 €) betreffen Forderungen aus der Förderung von Forschungsprojekten.",
+      "periods": [
+        "2024"
+      ]
+    },
+    {
+      "view": "balance",
+      "textDe": "Die Auflösung des Sonderpostens für Zuschüsse zum Anlagevermögen erfolgt korrespondierend zu den Abschreibungen und Abgängen der bezuschussten Anlagegüter."
+    },
+    {
+      "view": "balance",
+      "textDe": "Verbindlichkeiten, die durch Pfandrechte oder ähnliche Rechte gesichert sind, bestehen zum Abschlussstichtag nicht. Für die Verbindlichkeiten aus Lieferungen und Leistungen bestehen branchenübliche Eigentumsvorbehalte."
+    },
+    {
+      "view": "balance",
+      "textDe": "Die Verbindlichkeiten aus noch nicht verwendeten Zuschüssen beinhalten in Höhe von 24.000,00 € (Vorjahr 0,00 €) Verbindlichkeiten gegenüber Gesellschaftern.",
+      "periods": [
+        "2024"
+      ]
+    },
+    {
+      "view": "income",
+      "textDe": "Die sonstigen betrieblichen Aufwendungen aus anderen Geschäftsjahren betreffen im Wesentlichen die aufgeführten Positionen; die Einzelposten ergeben nicht die volle Summe."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2021"
+      ],
+      "textDe": "Das gezeichnete Kapital wurde mit Gesellschafterbeschluss vom 16.12.2021 um 800.000,00 € auf 1.370.000,00 € erhöht (Vorjahr: 570.000,00 €)."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2019",
+        "2020"
+      ],
+      "textDe": "Die Verbindlichkeiten gegenüber Gesellschaftern sind in diesen Jahren als eigene Bilanzposition ausgewiesen; ab 2021 heißt der Posten „Verbindlichkeiten aus noch nicht verwendeten Zuschüssen“ und enthält die Verbindlichkeiten gegenüber Gesellschaftern."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2019"
+      ],
+      "textDe": "Der Verbindlichkeitenspiegel des Berichts 2019 nennt die Restlaufzeiten nur in T€ (alle Verbindlichkeiten mit einer Restlaufzeit bis zu einem Jahr: 87 T€; Vorjahr 229 T€). Eine Aufteilung in Euro liegt nicht vor."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2022"
+      ],
+      "textDe": "Seit dem Bericht 2022 weist die Bilanz keine Verbindlichkeiten gegenüber Kreditinstituten mehr aus (Vorjahr: 0,00 €; 2020: 332.342,01 €)."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2023"
+      ],
+      "textDe": "Der Bericht 2023 liegt nur als Scan vor. Die Werte für 2023 stammen aus der Vorjahresspalte des Berichts 2024."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2023"
+      ],
+      "textDe": "Der Bericht 2023 liegt nur als Scan vor. Die Werte für 2023 stammen aus der Vorjahresspalte des Berichts 2024; das Gesamthonorar des Abschlussprüfers und die Vergütungen stammen aus dem Bericht 2023."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2020"
+      ],
+      "textDe": "Der Bericht 2020 gibt an, die Umsatzerlöse seien vollumfänglich im Inland erzielt worden. Der Bericht 2021 nennt für 2020 dagegen 91,0 % Inland und 9,0 % Ausland. Dargestellt ist die Angabe des jeweils eigenen Berichts."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2021",
+        "2022"
+      ],
+      "textDe": "Ab dem Bericht 2021 endet die Gewinn- und Verlustrechnung mit Verlustvortrag, Entnahme aus der Kapitalrücklage und Bilanzverlust. Der Jahresfehlbetrag des Vorjahres wird jeweils durch eine Entnahme aus der Kapitalrücklage ausgeglichen."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2019",
+        "2020"
+      ],
+      "textDe": "Die Berichte 2019 und 2020 nennen Erträge und Aufwendungen aus anderen Geschäftsjahren nur als Einzelposten in T€, nicht als Summe. Sie sind hier nicht übernommen."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2019",
+        "2020"
+      ],
+      "textDe": "Die Zahl der Beschäftigten ist in den Berichten 2019 und 2020 nur unvollständig lesbar bzw. nur im Folgebericht angegeben (2020: 43)."
+    },
+    {
+      "view": "income",
+      "periods": [
+        "2021",
+        "2022"
+      ],
+      "textDe": "Die Summe der Erträge und Aufwendungen aus anderen Geschäftsjahren steht im Bericht in T€; die Einzelposten ergeben nicht immer die volle Summe."
+    }
+  ],
+  "redactions": [
+    {
+      "view": "balance",
+      "page": 9,
+      "labelDe": "Anlagenspiegel",
+      "detailDe": "Der Anlagenspiegel (Entwicklung der Anschaffungs- und Herstellungskosten, Zugänge, Abgänge, Abschreibungen) ist im veröffentlichten Bericht vollständig geschwärzt (PDF-Seite 9). Die Buchwerte zum 31.12.2024 und 31.12.2023 stehen in der Bilanz.",
+      "periods": [
+        "2024"
+      ],
+      "kind": "redacted"
+    },
+    {
+      "view": "income",
+      "page": 6,
+      "labelDe": "Gesamthonorar des Abschlussprüfers",
+      "detailDe": "Das Gesamthonorar des Abschlussprüfers (Abschlussprüfungs-, andere Bestätigungs-, Steuerberatungs- und sonstige Leistungen) ist im veröffentlichten Bericht geschwärzt (PDF-Seite 6). Sichtbar ist nur der Anteil für das Vorjahr (Abschlussprüfungsleistungen): 332,98 €.",
+      "periods": [
+        "2024"
+      ],
+      "kind": "redacted"
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ],
+      "kind": "missing",
+      "labelDe": "Anlagenspiegel",
+      "detailDe": "Der Anlagenspiegel ist in der veröffentlichten PDF-Datei nicht enthalten (die Seitenzählung des Anhangs springt an der Stelle). Die Buchwerte stehen in der Bilanz."
+    },
+    {
+      "view": "balance",
+      "periods": [
+        "2023"
+      ],
+      "kind": "missing",
+      "labelDe": "Anlagenspiegel",
+      "detailDe": "Der Bericht 2023 enthält keinen Anlagenspiegel. Die Buchwerte stehen in der Bilanz."
+    }
+  ]
+}

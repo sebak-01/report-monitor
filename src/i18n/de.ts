@@ -18,6 +18,8 @@ export const de = {
     lede: 'Bitte laden Sie einen Jahresabschluss hoch – die Übersicht zeigt dann die Zahlen.',
   },
   source: 'Quelle',
+  sourceDataset: 'Datensatz',
+  systemLoadError: 'Die Beispieldaten konnten nicht geladen werden.',
   sourceStatus: {
     manualUnverified: 'Manuell erfasst, nicht unabhängig geprüft',
     manual: 'Manuell erfasst',
@@ -31,6 +33,8 @@ export const de = {
 
   sourceSelect: {
     label: 'Datenquelle',
+    groupSystem: 'Beispieldaten',
+    groupUser: 'Eigene Daten',
   },
 
   data: {
@@ -113,6 +117,11 @@ export const de = {
       'Ihr Browser erlaubt kein Speichern. Die Daten sind nur bis zum Schließen dieser Seite verfügbar.',
     storedTitle: 'Geladene Datensätze',
     storedEmpty: 'Noch nichts geladen. Das Dashboard zeigt dann die Übersicht ohne Zahlen.',
+    systemTitle: 'Beispieldaten',
+    systemHint:
+      'Diese Datensätze stammen aus öffentlichen Jahresabschlüssen und liegen schreibgeschützt im Projekt-Repository. Hochgeladene Dateien werden immer als eigene Quellen gespeichert.',
+    systemReadOnly: 'Schreibgeschützt',
+    systemPeriods: (periods: string) => `Geschäftsjahre ${periods}`,
     use: 'Anzeigen',
     inUse: 'Wird angezeigt',
     remove: 'Löschen',
@@ -259,6 +268,13 @@ export const de = {
 
   footer: {
     note: 'Alle Zahlen stammen aus dem jeweils verlinkten Jahresabschluss; sie wurden maschinell aus den PDFs ausgelesen bzw. von Hand erfasst und sind nicht unabhängig geprüft.',
+    attribution: {
+      intro: 'Quellen: Jahresabschlüsse, bereitgestellt von Land Rheinland-Pfalz auf',
+      portal: 'open.rlp.de',
+      license: 'Datenlizenz Deutschland – Namensnennung – Version 2.0 (dl-de/by-2-0)',
+      changes:
+        'Die Daten wurden maschinell aus den PDF-Berichten extrahiert und aufbereitet; Abweichungen zu den Originalberichten sind möglich.',
+    },
   },
 };
 

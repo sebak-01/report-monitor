@@ -5,8 +5,15 @@ import { previousPeriodId, selectablePeriods, sourceFor } from './lib/dataset';
 import { emptyDataset } from './lib/emptyDataset';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { SourceSelect } from './components/SourceSelect';
+import { SourceSelect, type SourceOption } from './components/SourceSelect';
 import { UploadPage } from './components/UploadPage';
+import {
+  fetchSystemDataset,
+  fetchSystemManifest,
+  systemIdOf,
+  systemSourceId,
+  type SystemSourceMeta,
+} from './lib/systemSources';
 import {
   deleteStored,
   listStored,
@@ -32,6 +39,8 @@ const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
 };
 
 const BUILTIN = 'builtin';
+const PORTAL_URL = 'https://open.rlp.de';
+const LICENSE_URL = 'https://www.govdata.de/dl-de/by-2-0';
 
 /** The selected view and year live in the URL hash (#/balance/2024), so a page can be linked and reloaded. */
 function readHash(viewIds: string[], periodIds: string[]): { view: string; period: string } {
@@ -72,6 +81,10 @@ function useIsUploadRoute(): boolean {
 export default function App() {
   const [stored, setStored] = useState<StoredDataset[]>([]);
   const [storedLoaded, setStoredLoaded] = useState(false);
+  const [systemMeta, setSystemMeta] = useState<SystemSourceMeta[]>([]);
+  const [systemManifestLoaded, setSystemManifestLoaded] = useState(false);
+  const [systemDataset, setSystemDataset] = useState<{ id: string; dataset: Dataset } | null>(null);
+  const [systemError, setSystemError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string>(() => readActiveSource() ?? BUILTIN);
   const isUpload = useIsUploadRoute();
 
@@ -88,15 +101,68 @@ export default function App() {
     };
   }, []);
 
+  // Sample datasets ship with the site (public/data/) and are only fetched on demand.
+  useEffect(() => {
+    let cancelled = false;
+    fetchSystemManifest()
+      .then((manifest) => {
+        if (cancelled) return;
+        setSystemMeta(manifest.datasets);
+        setSystemManifestLoaded(true);
+      })
+      .catch(() => {
+        // Offline or blocked: the sample data stay hidden, uploads keep working.
+        if (!cancelled) setSystemManifestLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const systemId = systemIdOf(activeId);
+  const activeSystemMeta = systemId ? (systemMeta.find((m) => m.id === systemId) ?? null) : null;
+
+  useEffect(() => {
+    if (!activeSystemMeta) {
+      setSystemDataset(null);
+      setSystemError(null);
+      return;
+    }
+    let cancelled = false;
+    setSystemError(null);
+    fetchSystemDataset(activeSystemMeta)
+      .then((dataset) => {
+        if (!cancelled) setSystemDataset({ id: activeSystemMeta.id, dataset });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSystemDataset(null);
+          setSystemError(de.systemLoadError);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSystemMeta]);
+
   const active = activeId === BUILTIN ? null : (stored.find((item) => item.id === activeId) ?? null);
   // Without an upload the dashboard shows the empty structure (boxes, no figures).
-  const dataset: Dataset = active ? active.dataset : emptyDataset;
-  const effectiveId = active ? active.id : BUILTIN;
+  const dataset: Dataset = active
+    ? active.dataset
+    : systemDataset
+      ? systemDataset.dataset
+      : emptyDataset;
+  const effectiveId = active ? active.id : activeId;
 
   const use = useCallback((id: string) => {
     setActiveId(id);
     writeActiveSource(id === BUILTIN ? null : id);
   }, []);
+
+  // A `system:` id the manifest does not know (e.g. from an earlier release) falls back to the empty view.
+  useEffect(() => {
+    if (systemManifestLoaded && systemId && !activeSystemMeta) use(BUILTIN);
+  }, [systemManifestLoaded, systemId, activeSystemMeta, use]);
 
   const importDataset = useCallback(
     async (item: StoredDataset) => {
@@ -121,6 +187,12 @@ export default function App() {
     [activeId, use],
   );
 
+  const sourceOptions: SourceOption[] = [
+    { id: BUILTIN, name: de.empty.title },
+    ...systemMeta.map((m) => ({ id: systemSourceId(m), name: m.name, group: 'system' as const })),
+    ...stored.map((i) => ({ id: i.id, name: i.name, group: 'user' as const })),
+  ];
+
   if (isUpload) {
     return (
       <div className="page">
@@ -136,8 +208,9 @@ export default function App() {
         <main>
           <UploadPage
             stored={stored}
+            systemSources={systemMeta.map((m) => ({ ...m, id: systemSourceId(m) }))}
             builtinOptions={[{ id: BUILTIN, name: de.empty.title }]}
-            activeId={effectiveId}
+            activeId={activeId}
             onImport={importDataset}
             onUse={use}
             onDelete={removeDataset}
@@ -147,26 +220,26 @@ export default function App() {
     );
   }
 
-  const waitingForStored = activeId !== BUILTIN && !storedLoaded && !active;
-  if (waitingForStored) {
+  const waitingForStored = activeId !== BUILTIN && !storedLoaded && !active && !systemId;
+  const waitingForSystem =
+    Boolean(systemId) && (!systemManifestLoaded || (Boolean(activeSystemMeta) && !systemDataset && !systemError));
+  if (waitingForStored || waitingForSystem) {
     return (
       <main className="page">
         <p role="status">{de.loading}</p>
       </main>
     );
   }
-  const sourceOptions = [
-    { id: BUILTIN, name: de.empty.title },
-    ...stored.map((i) => ({ id: i.id, name: i.name })),
-  ];
   return (
     <ErrorBoundary key={effectiveId}>
       <Dashboard
         dataset={dataset}
         sourceOptions={sourceOptions}
-        sourceId={effectiveId}
+        sourceId={activeId}
         onSourceChange={use}
-        empty={!active}
+        empty={!active && !systemDataset}
+        system={Boolean(systemDataset)}
+        error={systemError}
       />
     </ErrorBoundary>
   );
@@ -174,14 +247,18 @@ export default function App() {
 
 interface DashboardProps {
   dataset: Dataset;
-  sourceOptions: { id: string; name: string }[];
+  sourceOptions: SourceOption[];
   sourceId: string;
   onSourceChange: (id: string) => void;
   /** True when no file is loaded: the boxes show, but without figures. */
   empty: boolean;
+  /** True when a shipped sample dataset is active (footer shows the attribution). */
+  system: boolean;
+  /** Set when the sample dataset could not be loaded. */
+  error: string | null;
 }
 
-function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: DashboardProps) {
+function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty, system, error }: DashboardProps) {
   // Only views this app can render are offered in the dropdown.
   const views = useMemo(() => dataset.views.filter((v) => VIEW_COMPONENTS[v.id]), [dataset]);
   const viewIds = useMemo(() => views.map((v) => v.id), [views]);
@@ -233,6 +310,11 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: 
           <ViewSelect views={views} value={view.id} onChange={(id) => go(id, period)} />
           <PeriodSelect periods={periodIds} value={period} onChange={(id) => go(view.id, id)} />
         </div>
+        {error && (
+          <p className="message message--error" role="alert">
+            {error}
+          </p>
+        )}
         {source && (
           <p className="source">
             {de.source}:{' '}
@@ -242,6 +324,14 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: 
               </a>
             ) : (
               source.title
+            )}
+            {source.datasetUrl && (
+              <>
+                {' · '}
+                <a href={source.datasetUrl} target="_blank" rel="noopener noreferrer">
+                  {de.sourceDataset}
+                </a>
+              </>
             )}
             {status && <span className="pill">{status}</span>}
           </p>
@@ -256,7 +346,25 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: 
         <ViewComponent dataset={dataset} periodId={period} report={report} />
       </main>
 
-      <footer className="page-footer">{source?.extraction === 'upload' ? de.upload.footer : de.footer.note}</footer>
+      <footer className="page-footer">
+        {system ? (
+          <>
+            {de.footer.attribution.intro}{' '}
+            <a href={PORTAL_URL} target="_blank" rel="noopener noreferrer">
+              {de.footer.attribution.portal}
+            </a>
+            .{' '}
+            <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer">
+              {de.footer.attribution.license}
+            </a>
+            . {de.footer.attribution.changes}
+          </>
+        ) : source?.extraction === 'upload' ? (
+          de.upload.footer
+        ) : (
+          de.footer.note
+        )}
+      </footer>
     </div>
   );
 }

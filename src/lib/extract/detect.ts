@@ -13,6 +13,8 @@ export interface ReportExtract {
   source_url?: string;
   /** The newer extraction names the field `source`. */
   source?: string;
+  /** URI of the open-data record the report was published with (license attribution). */
+  dataset_url?: string;
   pages: ExtractPage[];
 }
 
@@ -23,6 +25,7 @@ export interface ReportMeta {
   /** Report year, e.g. "2024". */
   periodId: string;
   sourceUrl?: string;
+  datasetUrl?: string;
   title: string;
   extraction: 'text-layer' | 'ocr';
 }
@@ -103,6 +106,7 @@ export function readReportMeta(extract: ReportExtract, fileName: string): Report
     entitySeat: entity.seat,
     periodId,
     sourceUrl: extract.source_url ?? extract.source,
+    datasetUrl: extract.dataset_url,
     title: `Jahresabschluss ${periodId}`,
     extraction: ocr ? 'ocr' : 'text-layer',
   };
