@@ -5,11 +5,9 @@
 A local-first, browser-only dashboard for the key figures of companies, starting with state-owned
 enterprises such as research institutes. The UI is in German; code and documentation are in English.
 
-**Pilot:** annual accounts published as PDFs on a government open data portal. The dashboard ships with three
-read-only **sample datasets** (`public/data/`, selected explicitly via "Daten hochladen" – nothing loads
-automatically) and loads your own files through "Daten hochladen"; uploads stay in your browser and are kept
-separate from the sample data. Without any dataset selected the dashboard shows the full statement structure
-with every figure as "–".
+**Pilot:** annual accounts published as PDFs on a government open data portal. **No data is part of this
+repository** – without an uploaded dataset the dashboard shows the full statement structure with every figure
+as "–", and you load your own files through "Daten hochladen".
 
 ## Status
 
@@ -46,9 +44,6 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
 
 "Daten hochladen" (`#/upload`) loads your own figures. Everything happens in the browser; the file is never sent
 anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" dropdown appears once something is loaded).
-The page also lists the shipped sample datasets as a read-only section ("Beispieldaten"): they can be shown but not
-changed or deleted, and uploads are never merged into them – a new upload always creates or extends a user-owned
-source of its own.
 
 1. Drop or choose files: `.csv` (`;` `,` tab or `|`; UTF-8 or Windows-1252), `.xlsx` (every sheet is offered) or `.json`.
    Several files can be dropped at once.
@@ -86,7 +81,7 @@ npm run build      # type check + production build into dist/
 npm run preview    # serve the production build locally
 
 # build data/*.json from the report extracts in data/single-data/ (Node.js 22+);
-# the working tree is git-ignored, the published sample data live in public/data/
+# the files are git-ignored and loaded per upload in the dashboard
 npm run generate:datasets
 ```
 
@@ -98,10 +93,9 @@ The production build is a static site (relative base path) and can be hosted any
 2. Push to `main` – `.github/workflows/deploy.yml` runs the tests, builds `dist/` and publishes it to
    GitHub Pages. The deployment URL shows at the end of the workflow run.
 
-The hosted site ships with the three sample datasets (`public/data/`, see "Data source and license") but loads
-none of them automatically: it starts with the empty structure (all boxes, every figure "–") until a source is
-picked on "Daten hochladen". The sample data are read-only; your own uploads go through "Daten hochladen" and
-stay in that browser's storage.
+The hosted site contains no data at all: it starts with the empty structure (all boxes, every figure "–").
+Datasets are git-ignored and never reach the published build. To work with your own figures on the hosted site,
+load them through "Daten hochladen" in the browser – they stay in that browser's storage.
 
 ## Privacy
 
@@ -113,9 +107,8 @@ the site data or switching browsers or devices means uploading the files again.
 ## Project structure
 
 ```
-data/                        datasets you generated (git-ignored) – the working tree of the pipeline
+data/                        datasets you generated (git-ignored) – load them per upload
 data/single-data/            report extracts (*_extracted.json), one folder per company
-public/data/                 published sample datasets (fgk, ifos, time) + manifest.json (committed)
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
@@ -131,7 +124,6 @@ src/lib/extract/              report extracts (*_extracted.json) -> dataset: num
                               buildDataset.ts (one or more reports -> multi-year dataset)
 src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json/extract), mapping.ts (table -> dataset),
                               entityMatch.ts, merge.ts, storage.ts (IndexedDB), renderable.ts (generic view fallback)
-src/lib/systemSources.ts      read-only sample datasets from public/data/: manifest + dataset fetch, in-memory cache
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
 src/i18n/de.ts                all user-visible strings that are not part of the data
@@ -207,22 +199,12 @@ Each check is evaluated for every period within the tolerance given in `conventi
 
 ## Data source and license
 
-The sample datasets in `public/data/` (FGK, ifos, TIME – listed in `public/data/manifest.json`) are derived
-from annual accounts published as PDFs by **Land Rheinland-Pfalz** on [open.rlp.de](https://open.rlp.de)
-(and mirrored on [govdata.de](https://www.govdata.de)), each under the
-[Datenlizenz Deutschland – Namensnennung – Version 2.0](https://www.govdata.de/dl-de/by-2-0) (`dl-de/by-2-0`).
-The license requires a source note naming the provider, the license with a link to the license text, and a
-reference to the dataset (URI); the app shows provider, license and the change note in the footer whenever a
-sample dataset is active, and the per-period dataset URI in the header's source line (`sources[].datasetUrl`
-in the dataset JSON, `sources[].url` links the PDF). The data were machine-extracted from the PDFs and
-processed – the footer states this as the required change note.
+No data is distributed with this repository. The figures you load come from annual accounts published as PDFs
+on open data portals, each under its own license – check the terms and add the required attribution (source,
+license, link, and a note on changes) to the footer before a dashboard with real figures is published.
 
-Datasets you upload yourself come from wherever you got them; check their terms and provide the attribution
-they require. Figures are read from the PDF text layers (OCR where scanned) and are not independently
-verified. The reconciliation checks catch typing errors in sums, not wrong values that happen to be consistent.
-
-To refresh the sample datasets: patch the canonical PDF and dataset URLs into the report extracts
-(`source_url`, `dataset_url`), run `npm run generate:datasets`, and copy the result to `public/data/`.
+Figures are read from the PDF text layers (OCR where scanned) and are not independently verified. The
+reconciliation checks catch typing errors in sums, not wrong values that happen to be consistent.
 
 ## Known limitations
 

@@ -25,8 +25,6 @@ import { MappingForm } from './MappingForm';
 
 interface Props {
   stored: StoredDataset[];
-  /** Read-only sample datasets shipped with the site (already prefixed with `system:`). */
-  systemSources: { id: string; name: string; periods: string[] }[];
   /** The empty start view, offered as "Keine Daten". */
   builtinOptions: { id: string; name: string }[];
   activeId: string;
@@ -494,51 +492,7 @@ function ExtractImport({
   );
 }
 
-/** Read-only list of the sample datasets shipped with the site; they cannot be deleted or merged into. */
-function SystemSourceList({
-  systemSources,
-  activeId,
-  onUse,
-}: {
-  systemSources: Props['systemSources'];
-  activeId: string;
-  onUse: (id: string) => void;
-}) {
-  if (systemSources.length === 0) return null;
-  return (
-    <section className="card" aria-labelledby="system-title">
-      <h3 id="system-title" className="card-title">
-        {de.upload.systemTitle}
-      </h3>
-      <p className="muted">{de.upload.systemHint}</p>
-      <ul className="stored-list">
-        {systemSources.map((item) => {
-          const sorted = [...item.periods].sort();
-          const range = sorted.length > 1 ? `${sorted[0]}–${sorted[sorted.length - 1]}` : (sorted[0] ?? '');
-          return (
-            <li key={item.id}>
-              <span>
-                <strong>{item.name}</strong> <span className="muted">· {de.upload.systemPeriods(range)}</span>
-              </span>
-              <span className="row-actions">
-                {activeId === item.id ? (
-                  <span className="pill">{de.upload.inUse}</span>
-                ) : (
-                  <button type="button" className="button" onClick={() => onUse(item.id)}>
-                    {de.upload.use}
-                  </button>
-                )}
-                <span className="pill">{de.upload.systemReadOnly}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
-function StoredList({ stored, builtinOptions, activeId, onUse, onDelete }: Omit<Props, 'onImport' | 'systemSources'>) {
+function StoredList({ stored, builtinOptions, activeId, onUse, onDelete }: Omit<Props, 'onImport'>) {
   return (
     <section className="card" aria-labelledby="stored-title">
       <h3 id="stored-title" className="card-title">
@@ -662,7 +616,6 @@ export function UploadPage(props: Props) {
       {upload?.kind === 'dataset' && (
         <DatasetImport upload={upload} stored={props.stored} onImport={onImport} onCancel={() => setUpload(null)} />
       )}
-      <SystemSourceList systemSources={props.systemSources} activeId={props.activeId} onUse={props.onUse} />
       <StoredList
         stored={props.stored}
         builtinOptions={props.builtinOptions}

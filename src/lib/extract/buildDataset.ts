@@ -212,7 +212,6 @@ export function buildDataset(reports: ParsedReport[]): MergeResult {
       period: meta.periodId,
       title: meta.title,
       url: meta.sourceUrl,
-      datasetUrl: meta.datasetUrl,
       pagesUsed: 'Bilanz, Gewinn- und Verlustrechnung, Anlagespiegel',
       extraction: meta.extraction,
       verified: false,
