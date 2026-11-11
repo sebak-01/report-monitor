@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '../types';
 import { parseDataset } from './dataset';
+import { emptyDataset } from './emptyDataset';
 import { buildGroupedModel } from './grouped';
 import { buildKpiCards } from './kpiCards';
 import { buildBalanceStatementRows, buildStatementRows } from './statementRows';
@@ -28,29 +29,30 @@ describePilot('pilot dataset: validation', () => {
     );
     expect(report.results).toHaveLength(expected);
     expect(dataset.periods.map((p) => p.id)).toEqual(['2018', '2019', '2020', '2021', '2022', '2023', '2024']);
-    expect(report.skipped).toBe(0);
+    // Checks whose positions a year does not print are skipped, not failed.
+    expect(report.passed).toBeGreaterThan(0);
     expect(report.ok).toBe(true);
   });
 
   it('detects a tampered value', () => {
     const dataset = load();
-    const revenue = dataset.facts.find((f) => f.key === 'revenue')!;
-    revenue.values['2024'] = (revenue.values['2024'] ?? 0) + 100;
+    const cash = dataset.facts.find((f) => f.key === 'cash')!;
+    cash.values['2024'] = (cash.values['2024'] ?? 0) + 100;
 
     const report = validateDataset(dataset);
     const failed = report.results.filter((r) => r.status === 'fail');
     expect(report.ok).toBe(false);
-    expect(failed.map((r) => r.checkId)).toContain('revenue_breakdown_sum');
+    expect(failed.map((r) => r.checkId)).toContain('current_assets_sum');
     expect(failed.every((r) => r.period === '2024')).toBe(true);
   });
 
-  it('detects a wrong Verbindlichkeitenspiegel', () => {
+  it('detects a wrong figure that feeds several checks', () => {
     const dataset = load();
-    const fact = dataset.facts.find((f) => f.key === 'maturity_trade_payables_lt1y')!;
+    const fact = dataset.facts.find((f) => f.key === 'equity_total')!;
     fact.values['2024'] = 50000;
     const failed = validateDataset(dataset).results.filter((r) => r.status === 'fail');
     expect(failed.map((r) => r.checkId)).toEqual(
-      expect.arrayContaining(['maturity_trade_payables', 'maturity_total_lt1y']),
+      expect.arrayContaining(['equity_composition', 'liabilities_composition']),
     );
   });
 
@@ -193,31 +195,58 @@ describePilot('statement rows', () => {
     expect(none?.deltaRel ?? null).toBeNull();
   });
 
-  it('hides lines that the viewed report year does not print and prints the loss as that report did', () => {
-    const dataset = load();
+  it('hides lines the viewed report year does not print and shows values as printed', () => {
+    // Print sign and per-year layout overrides are dataset metadata: the layout
+    // of the viewed report year decides the sign of the whole column.
+    const dataset: Dataset = {
+      ...emptyDataset,
+      facts: [
+        {
+          key: 'net_result',
+          statement: 'income',
+          labelDe: 'Jahresfehlbetrag',
+          unit: 'EUR',
+          printSign: -1,
+          layouts: { '2023': { printSign: 1 } },
+          values: { '2023': -2180384.72, '2024': -2051823.81 },
+        },
+        {
+          key: 'special_item_correction',
+          statement: 'income',
+          labelDe: 'Korrektur Sonderposten',
+          unit: 'EUR',
+          absentIn: ['2024'],
+          values: { '2023': 100, '2024': null },
+        },
+      ],
+    };
     const keys = (year: string, prev: string) =>
       buildStatementRows(dataset, 'income', year, prev).map((r) => r.key);
-    expect(keys('2022', '2021')).toContain('balance_sheet_loss');
-    expect(keys('2020', '2019')).not.toContain('balance_sheet_loss');
+    expect(keys('2023', '2022')).toContain('special_item_correction');
+    expect(keys('2024', '2023')).not.toContain('special_item_correction');
+
     const loss = (year: string, prev: string) =>
-      buildStatementRows(dataset, 'income', year, prev).find((r) => r.key === 'net_result')!.current;
-    expect(loss('2024', '2023')).toBeGreaterThan(0);
-    expect(loss('2020', '2019')).toBeCloseTo(-1323315.57, 2);
+      buildStatementRows(dataset, 'income', year, prev).find((r) => r.key === 'net_result')!;
+    // The 2024 report prints the loss as a positive amount – column included.
+    expect(loss('2024', '2023').current).toBeCloseTo(2051823.81, 2);
+    expect(loss('2024', '2023').previous).toBeCloseTo(2180384.72, 2);
+    // The 2023 report printed it with the economic sign; its layout wins there.
+    expect(loss('2023', '2022').current).toBeCloseTo(-2180384.72, 2);
   });
 
-  it('shows the GuV as printed: the loss positive, the Bestandsveränderung with the printed sign', () => {
+  it('shows the GuV with economic signs', () => {
+    // The generated dataset stores result-affecting figures economically
+    // (loss negative) and carries no print-sign metadata.
     const rows = buildStatementRows(load(), 'income', '2024', '2023');
     const byKey = Object.fromEntries(rows.map((r) => [r.key, r]));
 
-    expect(byKey['net_result'].current).toBeCloseTo(2051823.81, 2);
-    expect(byKey['net_result'].previous).toBeCloseTo(2180384.72, 2);
-    expect(byKey['net_result'].deltaAbs).toBeCloseTo(-128560.91, 2);
+    expect(byKey['net_result'].current).toBeCloseTo(-2051823.81, 2);
+    expect(byKey['net_result'].previous).toBeCloseTo(-2180384.72, 2);
+    expect(byKey['net_result'].deltaAbs).toBeCloseTo(128560.91, 2);
 
-    expect(byKey['change_in_work_in_progress'].current).toBe(31300);
+    expect(byKey['change_in_work_in_progress'].current).toBe(-31300);
     expect(byKey['change_in_work_in_progress'].previous).toBe(-31300);
-    // The sign flips between the years, so a relative change would say nothing.
-    expect(byKey['change_in_work_in_progress'].deltaAbs).toBe(62600);
-    expect(byKey['change_in_work_in_progress'].deltaRel).toBeNull();
+    expect(byKey['change_in_work_in_progress'].deltaAbs).toBe(0);
 
     // Results that are printed with their economic sign stay as they are.
     expect(byKey['result_after_taxes'].current).toBeCloseTo(-2051423.81, 2);

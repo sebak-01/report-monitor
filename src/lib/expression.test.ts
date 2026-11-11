@@ -17,6 +17,20 @@ describe('expression parser', () => {
     expect(run('a - -b', { a: 2, b: 5 })).toBe(7);
   });
 
+  it('supports abs() for sign-agnostic checks', () => {
+    expect(run('abs(a - b)', { a: 2, b: 5 })).toBe(3);
+    expect(run('abs(a - b)', { a: 5, b: 2 })).toBe(3);
+    expect(run('abs(a) + abs(b)', { a: -2, b: -5 })).toBe(7);
+    expect(run('abs(a[prev] - a)', { a: 10 }, { a: 7 })).toBe(3);
+    expect(collectRefs(parseExpression('abs(a - b)'))).toEqual([
+      { name: 'a', prev: false },
+      { name: 'b', prev: false },
+    ]);
+    for (const bad of ['abs()', 'abs(a', 'abs a', 'abs[a]']) {
+      expect(() => parseExpression(bad), bad).toThrow(ExpressionError);
+    }
+  });
+
   it('resolves identifiers and [prev] references', () => {
     expect(run('revenue / revenue[prev] - 1', { revenue: 120 }, { revenue: 100 })).toBeCloseTo(0.2);
   });

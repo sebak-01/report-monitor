@@ -438,6 +438,178 @@ describe('statements', () => {
     expect(value('subscribed_capital')).toBe(1370000);
     expect(value('equity_total')).toBeCloseTo(1370000 + 3086180.33 - 1868250.46, 2);
   });
+
+  it('reads the Passivseite whose header the OCR double-lettered ("Passivseiite")', () => {
+    // fgk-2019: the page must be kept although "Passivseite" is misspelled –
+    // otherwise every Passiva figure of the year goes missing and the equity
+    // total silently becomes the Jahresfehlbetrag from the GuV page.
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Bilanz zum 31. Dezember 2019\nAktivseite\n' +
+          'A. Anlagevermögen\n' +
+          'Summe Anlagevermögen 7.525.300,15 7.525.300,15 7.846 144,85\n' +
+          '8 668.376,65 9.170.642,89\n',
+      },
+      {
+        page_number: 2,
+        text:
+          'Passivseiite\nStand\n31 12 2018\nEUR                  EUR\n' +
+          'A Eigenkapital\n' +
+          'I Stammkapital                                                                             570.000,00                                570.000,00\n' +
+          'Il. Kapitalrucklage           2.435.623,62                            2.436.085,80\n' +
+          'Il. Jahresfehlbetrag                                                                -738.932,91                           -739.621,82\n' +
+          'Summe Eigenkapital                                                                2.266.690,71         2.266.690,71     2.266.463,98\n' +
+          'B Sonderposten für Investitionszuschusse zum Anlagevermögen                                        6.191 960,55| 6.512.837,83\n' +
+          'B Ruckstellungen\n' +
+          '1. Steuerrückstellungen                                                             2.964,00                             4.449,39\n' +
+          '2. Sonstige Ruckstellungen                                                              118.842,62                              158.051,14\n' +
+          '121.806,62         121.806,62      162.500,53\n' +
+          'C. Verbindlichkeiten\n' +
+          '1. Verbindlichkeiten aus Lieferungen und Leistungen                                  48.454,99                               63.614,00\n' +
+          'Summe Verbindlichkeiten                                                                      87.918,77              87.918,77        228.840,55\n' +
+          '8.668 376,65] 9.170.642,89\n',
+      },
+      {
+        page_number: 3,
+        text:
+          'Gewinn- und Verlustrechnung für das Geschäftsjahr 2019\n' +
+          '12. Jahresfehlbetrag -738.932,91 -739.621,82\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2019', '2018');
+    const values = (key: string) => facts.find((f) => f.key === key)?.values;
+    // Every equity position keeps its own pair – and the year's own figure wins.
+    expect(values('subscribed_capital')).toEqual({ 2019: 570000, 2018: 570000 });
+    expect(values('capital_reserve')).toEqual({ 2019: 2435623.62, 2018: 2436085.8 });
+    expect(values('net_result_balance')).toEqual({ 2019: -738932.91, 2018: -739621.82 });
+    expect(values('equity_total')).toEqual({ 2019: 2266690.71, 2018: 2266463.98 });
+    // Rückstellungen: the bare amount line is the group total, the two items stay separate.
+    expect(values('tax_provisions')).toEqual({ 2019: 2964, 2018: 4449.39 });
+    expect(values('other_provisions')).toEqual({ 2019: 118842.62, 2018: 158051.14 });
+    expect(values('provisions_total')).toEqual({ 2019: 121806.62, 2018: 162500.53 });
+    expect(values('special_item_grants')).toEqual({ 2019: 6191960.55, 2018: 6512837.83 });
+    expect(values('total_equity_and_liabilities')).toEqual({ 2019: 8668376.65, 2018: 9170642.89 });
+  });
+
+  it('keeps group lines from stealing the amounts of the row above', () => {
+    // fgk-2019 Aktiva: "B Umlaufvermögen" and "I Vorräte" print without a dot.
+    // Glued to "Summe Anlagevermögen", the "Vorräte" pattern would take the
+    // Anlagevermögen pair; the lone item only stands for the group when the
+    // Umlaufvermögen total confirms it.
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Aktivseite\n' +
+          'A. Anlagevermögen\n' +
+          'I. Immaterielle Vermögensgegenstände\n' +
+          'sowie Lizenzen an solchen Rechten und Werten 205.716,00 203.601,00\n' +
+          'Summe Anlagevermögen 7.525.300,15 7.525.300,15 7.846 144,85\n' +
+          'B Umlaufvermögen\n' +
+          'I Vorräte\n' +
+          '1. Roh-, Hilfs- und Betriebsstoffe 67.157,50 65.645,87\n' +
+          'II Forderungen und sonstige Vermögensgegenstände\n' +
+          '1. Forderungen aus Lieferungen und Leistungen 375.597,50 234.292,13\n' +
+          '604.759,10 604.759,10 357.073,86\n' +
+          'III. Kassenbestand, Guthaben bei Kreditinstituten 460.528,20 891.670,31\n' +
+          'Summe Umlaufvermögen 1 132.444,80 1.132.444,80 1.314.390,04\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2019', '2018');
+    const values = (key: string) => facts.find((f) => f.key === key)?.values;
+    expect(values('fixed_assets_total')).toEqual({ 2019: 7525300.15, 2018: 7846144.85 });
+    expect(values('raw_materials')).toEqual({ 2019: 67157.5, 2018: 65645.87 });
+    expect(values('inventories_total')).toEqual({ 2019: 67157.5, 2018: 65645.87 });
+    expect(values('current_assets_total')).toEqual({ 2019: 1132444.8, 2018: 1314390.04 });
+    expect(values('receivables_total')).toEqual({ 2019: 604759.1, 2018: 357073.86 });
+  });
+
+  it('leaves a lone group item unproven by the parent total missing', () => {
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Aktivseite\n' +
+          'I Vorräte\n' +
+          '1. Roh-, Hilfs- und Betriebsstoffe 67.157,50 65.645,87\n' +
+          'III. Kassenbestand, Guthaben bei Kreditinstituten 460.528,20 891.670,31\n' +
+          'Summe Umlaufvermögen 1 132.444,80 1.132.444,80 1.314.390,04\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2019', '2018');
+    // Umlaufvermögen − Kassenbestand ≠ the item: the read is incomplete.
+    expect(facts.find((f) => f.key === 'inventories_total')).toBeUndefined();
+  });
+
+  it('lets a lone item stand for its group when the balance-sheet total confirms it', () => {
+    // fgk-2024: the Passivseite prints only "sonstige Rückstellungen" and no
+    // group sum – the balance-sheet total proves the item is the whole group.
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Bilanz zum 31.12.2024\nAKTIVA PASSIVA\n' +
+          'Summe Anlagevermögen 8.320.301,50 8.788.149,06\n' +
+          'Summe Umlaufvermögen 1.582.947,78 1.646.124,63\n' +
+          'I. Gezeichnetes Kapital 1.370.000,00 1.370.000,00\n' +
+          'III. Jahresfehlbetrag -2.051.823,81 -2.180.384,72\n' +
+          'Summe Eigenkapital 2.672.461,76 2.419.795,61\n' +
+          'B. Sonderposten für Investitionszuschüsse zum Anlagevermögen 6.940.757,91 7.371.848,00\n' +
+          'C. Rückstellungen\n' +
+          'sonstige Rückstellungen 228.969,63 239.218,34\n' +
+          'D. Verbindlichkeiten\n' +
+          'Summe Verbindlichkeiten 84.182,26 423.220,51\n' +
+          '9.926.371,56 10.454.082,46\n',
+      },
+    ];
+    const { facts } = parseStatements(pages, '2024', '2023');
+    const values = (key: string) => facts.find((f) => f.key === key)?.values;
+    expect(values('other_provisions')).toEqual({ 2024: 228969.63, 2023: 239218.34 });
+    expect(values('provisions_total')).toEqual({ 2024: 228969.63, 2023: 239218.34 });
+    expect(values('tax_provisions')).toBeUndefined();
+  });
+
+  it('aligns the two balance-sheet totals when one side misread a digit', () => {
+    // fgk-2021 prior year: OCR read "9.526 623,39" instead of "9.526.628,39".
+    const pages = [
+      {
+        page_number: 1,
+        text:
+          'Aktivseite\n' +
+          'Summe Anlagevermögen 7.829 008,72 7.929.716,90\n' +
+          'Summe Umlaufvermögen 1.799.878,42 1.574.809,68\n' +
+          'C Rechnungsabarenzungsposten 12.233,08 22.101,81\n' +
+          '9 641.120,22| 9.526 628,39\n',
+      },
+      {
+        page_number: 2,
+        text:
+          'Passivseite\n' +
+          'A. Eigenkapital\n' +
+          't Stammkapital 1.370.000,00 570.000,00\n' +
+          'Il. Kapitalrucklage 2.550 037,22 2.936.181,85\n' +
+          'Ill. Bilanzverlust -922.730,85 -1.323.315,57\n' +
+          'Summe Eigenkapital 2.997.306,37 2.997.306,37 2.182 866,28\n' +
+          'B. Sonderposten fur Investitionszuschusse zum Anlagevermogen 6.337.141,00 6 316.187,83\n' +
+          'C. Ruckstellungen\n' +
+          '1 Steuerruckstellungen 5.600,00 0,00\n' +
+          '2. Sonstige Ruckstellungen 109.749,31 196.852,20\n' +
+          '115.349,31 115.349,31 196.852,20\n' +
+          'D Verbindlichkeiten\n' +
+          'Summe Verbindlichkeiten 191.323,54 191.323,54 830.722,08\n' +
+          '9.641.120,22] 9.526 623,39\n',
+      },
+    ];
+    const { facts, warnings } = parseStatements(pages, '2021', '2020');
+    const values = (key: string) => facts.find((f) => f.key === key)?.values;
+    expect(values('tax_provisions')).toEqual({ 2021: 5600, 2020: 0 });
+    expect(values('provisions_total')).toEqual({ 2021: 115349.31, 2020: 196852.2 });
+    expect(values('total_assets')).toEqual({ 2021: 9641120.22, 2020: 9526628.39 });
+    expect(values('total_equity_and_liabilities')).toEqual({ 2021: 9641120.22, 2020: 9526628.39 });
+    expect(warnings.join(' ')).toMatch(/Bilanzidentität/);
+  });
 });
 
 describe('buildDataset', () => {

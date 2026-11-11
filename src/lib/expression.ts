@@ -9,7 +9,7 @@
  *   expr    := term (('+' | '-') term)*
  *   term    := unary (('*' | '/') unary)*
  *   unary   := '-' unary | primary
- *   primary := number | identifier ('[' 'prev' ']')? | '(' expr ')'
+ *   primary := number | identifier ('[' 'prev' ']')? | 'abs' '(' expr ')' | '(' expr ')'
  */
 
 export class ExpressionError extends Error {
@@ -23,6 +23,7 @@ export type Node =
   | { type: 'num'; value: number }
   | { type: 'ref'; name: string; prev: boolean }
   | { type: 'neg'; arg: Node }
+  | { type: 'call'; fn: 'abs'; arg: Node }
   | { type: 'bin'; op: '+' | '-' | '*' | '/'; left: Node; right: Node };
 
 type Token =
@@ -128,6 +129,14 @@ class Parser {
     }
     if (t.kind === 'id') {
       this.pos++;
+      if (t.value === 'abs' && this.peekSym('(')) {
+        this.pos++;
+        if (++this.depth > MAX_DEPTH) throw new ExpressionError('Expression is nested too deeply');
+        const arg = this.expr();
+        this.depth--;
+        this.expectSym(')');
+        return { type: 'call', fn: 'abs', arg };
+      }
       let prev = false;
       if (this.peekSym('[')) {
         this.pos++;
@@ -172,6 +181,8 @@ export function collectRefs(node: Node): Ref[] {
       return [{ name: node.name, prev: node.prev }];
     case 'neg':
       return collectRefs(node.arg);
+    case 'call':
+      return collectRefs(node.arg);
     case 'bin':
       return [...collectRefs(node.left), ...collectRefs(node.right)];
   }
@@ -185,6 +196,8 @@ export function evaluate(node: Node, resolve: (ref: Ref) => number): number {
       return resolve({ name: node.name, prev: node.prev });
     case 'neg':
       return -evaluate(node.arg, resolve);
+    case 'call':
+      return Math.abs(evaluate(node.arg, resolve));
     case 'bin': {
       const l = evaluate(node.left, resolve);
       const r = evaluate(node.right, resolve);

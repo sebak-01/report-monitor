@@ -23,14 +23,6 @@ const { validateDataset } = await import('../src/lib/validate.ts');
 
 const [, , sourceDir = 'data/single-data', outDir = 'data'] = process.argv;
 
-const OUT_NAME: Record<string, string> = {
-  // The curated pilot dataset fgk.json is the one to load; the auto-extract is
-  // written under its own name so it never overwrites it.
-  fgk: 'fgk-auto',
-  ifos: 'ifos',
-  time: 'time',
-};
-
 /** Extracts named "<company>-<year>_extracted.json", grouped per company. */
 function companyGroups(dir: string): Map<string, string[]> {
   const groups = new Map<string, string[]>();
@@ -58,8 +50,7 @@ function main(): void {
 
     const { dataset, warnings } = buildDataset(reports);
     const report = validateDataset(dataset);
-    const outName = OUT_NAME[company] ?? company.toLowerCase();
-    const outFile = join(outDir, `${outName}.json`);
+    const outFile = join(outDir, `${company.toLowerCase()}.json`);
     writeFileSync(outFile, JSON.stringify(dataset, null, 2) + '\n', 'utf-8');
 
     console.log(`${company} -> ${outFile}  (im Dashboard über „Daten hochladen" laden)`);

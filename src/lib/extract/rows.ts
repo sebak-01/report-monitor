@@ -20,12 +20,15 @@ import { amountSpans } from './numbers';
 
 /**
  * Starts a printed row label. A dot must not be a decimal point ("55.110,43"),
- * and a mark must be followed by a letter so that "I. + II." stays one label.
+ * a mark must be followed by a letter so that "I. + II." stays one label, and
+ * OCR/layout drops the dot after the number ("I Vorräte", "B Rückstellungen") –
+ * without that variant the group line merges into the row above and its label
+ * ends up claiming that row's amounts.
  */
 const LABEL_START =
-  /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|-\s*davon\s*|davon\s+)/;
+  /(?:^|\s)(?:(?:[IVXli1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*(?=[A-Za-zÄÖÜäöüß])|(?:[IVXli1]{1,6}|[A-Z]{1,4}|\d{1,2})\s+(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|-\s*davon\s*|davon\s+)/;
 /** Page footers that PDF text layers append to the last row of a table. */
-const FOOTER = /\s*(?:Anlage\s*\d+\s*\/\s*)?Seite\s*\d+\s*$/i;
+const FOOTER = /\s*(?:Anlage\s*\d+(?:\s*\/\s*(?:Seite\s*)?\d+)?|Seite\s*\d+)\s*$/i;
 const UNIT_ROW = /^(?:eur|euro|t€|teur)(?:\s+(?:eur|euro|t€|teur))*$/i;
 /** A label that wraps from the row above ("…/Geschäftsausstattung", "Werten", "einschließlich …"). */
 const FRAGMENT = /^[a-zäöüß/(–-]/;
@@ -143,8 +146,15 @@ export function rowsFromText(text: string, page: number): RawRow[] {
           lastRow = emit(pending, chunk.numbers, {});
           pending = '';
         } else {
+          // A bare group total takes the headline's name – but only once per
+          // headline: the page's closing balance-sheet sum repeats the pattern
+          // without belonging to the last group, so it stays a plain "Summe".
           const headline = [...rows].reverse().find((r) => r.headline);
-          lastRow = emit(headline ? `Summe ${headline.label}` : 'Summe', chunk.numbers, { unlabeled: true });
+          const label =
+            headline && !rows.some((r) => r.label === `Summe ${headline.label}`)
+              ? `Summe ${headline.label}`
+              : 'Summe';
+          lastRow = emit(label, chunk.numbers, { unlabeled: true });
         }
       } else if (!chunk.marked && isFragment(chunk.label) && pending !== '') {
         // Label fragment completing the pending label ("einschließlich der Bauten …").

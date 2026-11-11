@@ -67,8 +67,38 @@ export const FACT_SPECS: FactSpec[] = [
   { key: 'net_result_balance', statement: 'balance_liabilities', labelDe: 'Jahresfehlbetrag / Bilanzverlust', patterns: [/Jahresfehlbetra/i, /Bilanzverlust/i, /Jahresüberschuss/i], parentKey: 'equity_total', numberLabel: 'III.', result: true },
   { key: 'equity_total', statement: 'balance_liabilities', labelDe: 'Summe Eigenkapital', patterns: [/Summe Ei.enkap/i], emphasis: 'total', numberLabel: 'A.', sumOf: ['subscribed_capital', 'capital_reserve', 'net_result_balance'] },
   { key: 'special_item_grants', statement: 'balance_liabilities', labelDe: 'Sonderposten für Investitionszuschüsse', patterns: [/andere Sonderposten/i, /Sonder.osten/i], emphasis: 'subtotal', numberLabel: 'B.' },
-  { key: 'provisions_total', statement: 'balance_liabilities', labelDe: 'Rückstellungen', patterns: [/Summe R.ckstellungen/i, /sonstige R.ckstellungen\s/i], emphasis: 'subtotal', numberLabel: 'C.', sumOf: ['other_provisions'] },
-  { key: 'other_provisions', statement: 'balance_liabilities', labelDe: 'Sonstige Rückstellungen', patterns: [/sonstige R.ckstellungen/i], parentKey: 'provisions_total' },
+  {
+    key: 'provisions_total',
+    statement: 'balance_liabilities',
+    labelDe: 'Rückstellungen',
+    // The total prints as "Summe Rückstellungen", as "C. Rückstellungen <amounts>"
+    // or as a bare amount line under the "C. Rückstellungen" headline. The bare
+    // case is read from the row parser ("Summe C. Rückstellungen"). Never the
+    // "sonstige Rückstellungen" item – that is other_provisions.
+    patterns: [
+      /Summe (?:der |[A-Z]\.?\s+)?R.ckstellungen/i,
+      /^\s*(?:[A-Z]\.?\s+)?R.ckstellungen\s+(?=[\d(])/i,
+    ],
+    emphasis: 'subtotal',
+    numberLabel: 'C.',
+    sumOf: ['tax_provisions', 'other_provisions'],
+  },
+  {
+    key: 'tax_provisions',
+    statement: 'balance_liabilities',
+    labelDe: 'Steuerrückstellungen',
+    patterns: [/Steuerr.ckstellungen/i],
+    parentKey: 'provisions_total',
+    numberLabel: '1.',
+  },
+  {
+    key: 'other_provisions',
+    statement: 'balance_liabilities',
+    labelDe: 'Sonstige Rückstellungen',
+    patterns: [/sonstige R.ckstellungen/i],
+    parentKey: 'provisions_total',
+    numberLabel: '2.',
+  },
   { key: 'bank_liabilities', statement: 'balance_liabilities', labelDe: 'Verbindlichkeiten gegenüber Kreditinstituten', patterns: [/gegen.ber Kreditinstituten/i], parentKey: 'liabilities_total', numberLabel: '1.' },
   { key: 'advance_payments_received', statement: 'balance_liabilities', labelDe: 'Erhaltene Anzahlungen', patterns: [/Erhaltene Anzahlungen/i], parentKey: 'liabilities_total', numberLabel: '1.' },
   { key: 'trade_payables', statement: 'balance_liabilities', labelDe: 'Verbindlichkeiten aus Lieferungen und Leistungen', patterns: [/Verbindlichkeiten aus Lieferungen/i], parentKey: 'liabilities_total' },
@@ -90,7 +120,14 @@ export const FACT_SPECS: FactSpec[] = [
   { key: 'wages_salaries', statement: 'income', labelDe: 'Löhne und Gehälter', patterns: [/L.hne und Geh.lter/i], parentKey: 'personnel_expenses_total', numberLabel: 'a)' },
   { key: 'social_security_pension', statement: 'income', labelDe: 'Soziale Abgaben und Aufwendungen für Altersversorgung', patterns: [/soziale Abgaben und Aufwendungen f/i], parentKey: 'personnel_expenses_total', numberLabel: 'b)' },
   { key: 'personnel_expenses_total', statement: 'income', labelDe: 'Personalaufwand', patterns: [], numberLabel: '5.', emphasis: 'subtotal', sumOf: ['wages_salaries', 'social_security_pension'] },
-  { key: 'pension_expenses', statement: 'income', labelDe: 'davon für Altersversorgung', patterns: [/davon f.r Altersversorgung/i], emphasis: 'memo' },
+  {
+    key: 'pension_expenses',
+    statement: 'income',
+    labelDe: 'davon für Altersversorgung',
+    patterns: [/davon f.r Altersversorgung/i],
+    parentKey: 'social_security_pension',
+    emphasis: 'memo',
+  },
   { key: 'depreciation', statement: 'income', labelDe: 'Abschreibungen', patterns: [/auf immaterielle Verm.gensgegen/i, /Abschreibungen auf immaterielle/i], numberLabel: '6./7.' },
   { key: 'other_operating_expenses', statement: 'income', labelDe: 'Sonstige betriebliche Aufwendungen', patterns: [/sonstige betriebliche Aufwendungen/i], numberLabel: '7./8.' },
   { key: 'operating_result', statement: 'income', labelDe: 'Betriebsergebnis', patterns: [/Betriebsergebnis/i], numberLabel: '9.', emphasis: 'subtotal', result: true },
@@ -120,8 +157,10 @@ function squashed(text: string): string {
   return text.replace(/([A-Za-zÄÖÜäöüß])\s+(?=[A-Za-zÄÖÜäöüß])/g, '$1');
 }
 
-const AKTIVA = /A\s*K\s*T\s*I\s*V\s*A|Aktivseite/i;
-const PASSIVA = /P\s*A\s*S\s*S\s*I\s*V\s*A|Passivseite/i;
+// OCR misreads the side headers ("Passivseiite", "A k 11 v s e 11 e") – the
+// variants keep the page in, the statement names below decide the side.
+const AKTIVA = /A\s*K\s*T\s*I\s*V\s*A|Aktivs?e[i]?ite/i;
+const PASSIVA = /P\s*A\s*S\s*S\s*I\s*V\s*A|Passivs?e[i]?ite/i;
 
 /** The pages that carry the statements, not the Anhang or the Anlagespiegel. */
 export function statementPages(pages: { page_number: number; text: string }[]): {
@@ -129,16 +168,16 @@ export function statementPages(pages: { page_number: number; text: string }[]): 
   text: string;
 }[] {
   return pages.filter((p) =>
-    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Aktivseite|Passivseite|Bilanz\s+(?:zum|per)|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
+    /A\s*K\s*T\s*I\s*V\s*A|P\s*A\s*S\s*S\s*I\s*V\s*A|Aktivs?e[i]?ite|Passivs?e[i]?ite|Bilanz\s+(?:zum|per)|Ums.tzerl|GEWINN- UND VERLUST|Gewinn- und Verlustrechnung/i.test(
       `${p.text}\n${squashed(p.text)}`,
     ),
   );
 }
 
 /** "1.", "II.", "a)", "Summe " – a new row starts here. OCR misreads roman numerals
- * ("Il.", "Ill.") and drops the dot after a row number ("1 sonstige Rückstellungen"). */
+ * ("Il.", "Ill.", "li.") and drops the dot after a row number ("1 sonstige Rückstellungen"). */
 const LABEL_MARK =
-  /(?:^|\s)(?:(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\s+(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
+  /(?:^|\s)(?:(?:[IVXli1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*|(?:[IVXli1]{1,6}|[A-Z]{1,4}|\d{1,2})\s+(?=[A-Za-zÄÖÜäöüß])|[a-zäöüß]\)\s*|Summe\s+|davon\s+)/;
 
 /** Narrative lines ("…entwickelte sich im Geschäftsjahr …") are no rows and borrow no amounts. */
 const NARRATIVE =
@@ -166,7 +205,7 @@ function numbersInLine(text: string): boolean {
  * first one are then not the ones printed behind the second.
  */
 function isFirstLabel(text: string, at: number): boolean {
-  const head = text.slice(0, at).replace(/^\s*(?:[IVXl1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*/, '');
+  const head = text.slice(0, at).replace(/^\s*(?:[IVXli1]{1,6}|[A-Z]{1,4}|\d{1,2})\.(?!\d)\s*/, '');
   return !LABEL_MARK.test(head);
 }
 
@@ -428,16 +467,19 @@ export function parseStatements(
     if (found.has(spec.key)) continue;
     for (const pattern of spec.patterns) {
       // The figure's own row is the shortest label that contains the pattern –
-      // not the group row or the bare total that carries the same words.
+      // not the group row or the bare total that carries the same words. Rows
+      // built from a bare amount line ("Summe C. Rückstellungen") come last.
       const matches = rowLines.filter(
         (r) =>
-          !r.unlabeled &&
           !claimedRows.has(r) &&
           !claimedLabel(r.label) &&
           (!spec.exclude || !folded(spec.exclude).test(foldUmlauts(r.label))) &&
           folded(pattern).test(foldUmlauts(r.label)),
       );
-      const row = matches.sort((a, b) => a.label.length - b.label.length)[0];
+      const row = matches.sort(
+        (a, b) =>
+          Number(a.unlabeled) - Number(b.unlabeled) || a.label.length - b.label.length,
+      )[0];
       if (!row) continue;
       const values = pair(row.numbers);
       if (!values) break;
@@ -524,6 +566,9 @@ export function parseStatements(
   // Group totals the report prints as bare amount lines, summed from their items.
   // Items a layout does not have count as 0; derived totals are recomputed every
   // pass until stable, so a parent is never frozen while its items are missing.
+  // A lone item stands for its group only when the parent total confirms it
+  // (parent − sibling items = the item) – otherwise the line was an incomplete
+  // read and the total stays missing instead of becoming the item's value.
   const printed = new Set(found.keys());
   const derived = new Set<string>();
   for (let pass = 0; pass < 8; pass += 1) {
@@ -532,11 +577,56 @@ export function parseStatements(
       if (!spec.sumOf?.length) continue;
       if (printed.has(spec.key) && found.has(spec.key)) continue;
       const parts = spec.sumOf.map((k) => found.get(k));
-      if (parts.every((p) => !p)) continue;
-      const sum: [number, number] = [
-        parts.reduce((s, p) => s + (p ? p[0] : 0), 0),
-        parts.reduce((s, p) => s + (p ? p[1] : 0), 0),
-      ];
+      const present = parts.filter((p): p is [number, number] => p !== undefined);
+      let sum: [number, number] | null = null;
+      if (present.length >= 2) {
+        sum = [
+          parts.reduce((s, p) => s + (p ? p[0] : 0), 0),
+          parts.reduce((s, p) => s + (p ? p[1] : 0), 0),
+        ];
+      } else if (present.length === 1) {
+        // A lone item stands for its group only when an independent identity
+        // confirms it: the parent total (parent − sibling items = the item) or
+        // the balance-sheet total (total − sibling groups = the group). Without
+        // that proof the line was an incomplete read and stays missing.
+        const parentSpec = spec.parentKey ? FACT_SPECS.find((s) => s.key === spec.parentKey) : undefined;
+        const parentVal = spec.parentKey ? found.get(spec.parentKey) : undefined;
+        const siblings = (parentSpec?.sumOf ?? []).filter((k) => k !== spec.key);
+        const confirms = (candidate: [number, number]) =>
+          Math.abs(candidate[0] - present[0][0]) < 0.05 && Math.abs(candidate[1] - present[0][1]) < 0.05;
+        if (parentVal && siblings.length > 0 && siblings.every((k) => found.has(k))) {
+          const siblingSum: [number, number] = [
+            siblings.reduce((s, k) => s + (found.get(k)?.[0] ?? 0), 0),
+            siblings.reduce((s, k) => s + (found.get(k)?.[1] ?? 0), 0),
+          ];
+          if (confirms([parentVal[0] - siblingSum[0], parentVal[1] - siblingSum[1]])) {
+            sum = present[0];
+          }
+        }
+        if (!sum) {
+          const composition: Record<string, { totalKey: string; members: string[] }> = {
+            balance_assets: {
+              totalKey: 'total_assets',
+              members: ['fixed_assets_total', 'current_assets_total', 'prepaid_expenses'],
+            },
+            balance_liabilities: {
+              totalKey: 'total_equity_and_liabilities',
+              members: ['equity_total', 'special_item_grants', 'provisions_total', 'liabilities_total'],
+            },
+          };
+          const comp = composition[spec.statement];
+          const others = (comp?.members ?? []).filter((k) => k !== spec.key);
+          const totalVal = comp ? found.get(comp.totalKey) : undefined;
+          if (comp && totalVal && others.length > 0 && others.every((k) => found.has(k))) {
+            const candidate: [number, number] = [
+              totalVal[0] - others.reduce((s, k) => s + (found.get(k)?.[0] ?? 0), 0),
+              totalVal[1] - others.reduce((s, k) => s + (found.get(k)?.[1] ?? 0), 0),
+            ];
+            if (confirms(candidate)) sum = present[0];
+          }
+        }
+      }
+      if (!sum) continue;
       const prev = found.get(spec.key);
       if (prev && Math.abs(prev[0] - sum[0]) < 0.005 && Math.abs(prev[1] - sum[1]) < 0.005) continue;
       found.set(spec.key, sum);
@@ -544,6 +634,52 @@ export function parseStatements(
       changed = true;
     }
     if (!changed) break;
+  }
+
+  // Bilanzidentität: the two sides share one total. When one side's printed
+  // total differs (a misread digit), the side whose total the items confirm
+  // decides both – the items are read independently of the total line.
+  {
+    const assetsTotal = found.get('total_assets');
+    const liabsTotal = found.get('total_equity_and_liabilities');
+    const differs =
+      assetsTotal &&
+      liabsTotal &&
+      (Math.abs(assetsTotal[0] - liabsTotal[0]) > 0.05 || Math.abs(assetsTotal[1] - liabsTotal[1]) > 0.05);
+    if (differs) {
+      const sumOf = (keys: string[]): [number, number] | null => {
+        const vals = keys.map((k) => found.get(k));
+        if (vals.some((v) => v === undefined)) return null;
+        return [
+          vals.reduce((s, v) => s + (v ? v[0] : 0), 0),
+          vals.reduce((s, v) => s + (v ? v[1] : 0), 0),
+        ];
+      };
+      const sums = [
+        sumOf(['fixed_assets_total', 'current_assets_total', 'prepaid_expenses']),
+        sumOf(['equity_total', 'special_item_grants', 'provisions_total', 'liabilities_total']),
+      ].filter((s): s is [number, number] => s !== null);
+      const close = (a: [number, number], b: [number, number]) =>
+        Math.abs(a[0] - b[0]) <= 0.05 && Math.abs(a[1] - b[1]) <= 0.05;
+      const votes: [number, number][] = [];
+      for (const s of sums) {
+        const matchA = close(s, assetsTotal);
+        const matchL = close(s, liabsTotal);
+        if (matchA && !matchL) votes.push(assetsTotal);
+        else if (matchL && !matchA) votes.push(liabsTotal);
+      }
+      let chosen: [number, number] | null = null;
+      if (votes.length > 0 && votes.every((v) => close(v, votes[0]))) {
+        chosen = votes[0];
+      } else if (votes.length === 0 && sums.length === 2 && close(sums[0], sums[1])) {
+        chosen = sums[0];
+      }
+      if (chosen) {
+        found.set('total_assets', chosen);
+        found.set('total_equity_and_liabilities', chosen);
+        warnings.push('„Bilanzsumme": abweichende Angaben – über die Bilanzidentität angeglichen.');
+      }
+    }
   }
 
   // The same amount read for several figures is the signature of a misassignment.

@@ -6,7 +6,7 @@
  * prior-year columns are cross-checked.
  */
 
-import type { Dataset, Fact, Note, Period, Redaction, Schedule, ScheduleRow, SourceDoc } from '../../types';
+import type { Check, Dataset, Fact, Note, Period, Redaction, Schedule, ScheduleRow, SourceDoc } from '../../types';
 import { findAnlagespiegelPage, parseAnlagespiegel } from './anlagespiegel';
 import { readReportMeta, sortedPages, type ReportExtract, type ReportMeta } from './detect';
 import { parseStatements } from './statements';
@@ -128,6 +128,35 @@ function backfillFromSchedule(facts: Fact[], schedule: Schedule, periodId: strin
  * rebuilt with `buildDataset`. A new report replaces the stored report of the
  * same year (the re-uploaded year wins entirely, no leftovers of the old one).
  */
+/**
+ * Reconciliation checks over the statement figures. A check only lands in a
+ * dataset when the company's schema has every position it references – a
+ * position the company never prints (no fact in any year) is no gap to flag,
+ * and the validation treats a missing figure as a skip, not a zero.
+ */
+const CHECKS: Check[] = [
+  { id: 'balance_sums_equal', labelDe: 'Bilanzsumme Aktiva = Passiva', lhs: 'total_assets', rhs: 'total_equity_and_liabilities', views: ['balance'] },
+  { id: 'assets_composition', labelDe: 'Anlage- + Umlaufvermögen + RAP = Bilanzsumme', lhs: 'fixed_assets_total + current_assets_total + prepaid_expenses', rhs: 'total_assets', views: ['balance'] },
+  { id: 'liabilities_composition', labelDe: 'Eigenkapital + Sonderposten + Rückstellungen + Verbindlichkeiten = Bilanzsumme', lhs: 'equity_total + special_item_grants + provisions_total + liabilities_total', rhs: 'total_equity_and_liabilities', views: ['balance'] },
+  { id: 'fixed_assets_sum', labelDe: 'Immaterielle + Sachanlagen = Anlagevermögen', lhs: 'intangible_assets + tangible_assets_total', rhs: 'fixed_assets_total', views: ['balance'] },
+  { id: 'equity_composition', labelDe: 'Eigenkapital = Kapital + Rücklage + Jahresergebnis', lhs: 'subscribed_capital + capital_reserve + net_result_balance', rhs: 'equity_total', views: ['balance'] },
+  { id: 'tangible_assets_sum', labelDe: 'Sachanlagen Summe', lhs: 'land_buildings + technical_equipment + other_equipment + construction_in_progress', rhs: 'tangible_assets_total', views: ['balance'] },
+  { id: 'inventories_sum', labelDe: 'Vorräte Summe', lhs: 'raw_materials + work_in_progress + inventory_advance_payments', rhs: 'inventories_total', views: ['balance'] },
+  { id: 'receivables_sum', labelDe: 'Forderungen Summe', lhs: 'trade_receivables + grantor_receivables + shareholder_receivables + other_assets', rhs: 'receivables_total', views: ['balance'] },
+  { id: 'current_assets_sum', labelDe: 'Umlaufvermögen Summe', lhs: 'inventories_total + receivables_total + cash', rhs: 'current_assets_total', views: ['balance'] },
+  { id: 'liabilities_sum', labelDe: 'Verbindlichkeiten Summe', lhs: 'bank_liabilities + advance_payments_received + trade_payables + unused_grants_liabilities + other_liabilities', rhs: 'liabilities_total', views: ['balance'] },
+  { id: 'material_sum', labelDe: 'Materialaufwand Summe', lhs: 'material_raw_supplies + material_purchased_services', rhs: 'material_expenses_total', views: ['income'] },
+  { id: 'personnel_sum', labelDe: 'Personalaufwand Summe', lhs: 'wages_salaries + social_security_pension', rhs: 'personnel_expenses_total', views: ['income'] },
+  { id: 'income_chain', labelDe: 'GuV-Kette bis Ergebnis nach Steuern', lhs: 'revenue + change_in_work_in_progress + other_operating_income - material_expenses_total - personnel_expenses_total - depreciation - other_operating_expenses + interest_income - interest_expense - income_taxes', rhs: 'result_after_taxes', views: ['income'] },
+  { id: 'net_result_chain', labelDe: 'Ergebnis nach Steuern und sonstige Steuern = Jahresergebnis', lhs: 'abs(result_after_taxes - net_result)', rhs: 'abs(other_taxes)', views: ['income'] },
+  { id: 'net_result_matches_balance', labelDe: 'Jahresergebnis GuV = Bilanz', lhs: 'net_result', rhs: 'net_result_balance', views: ['balance', 'income'] },
+];
+
+/** The keys a formula references ("total_assets + abs(prepaid_expenses)" -> the two). */
+function formulaKeys(formula: string): string[] {
+  return (formula.match(/[a-z][a-z0-9_]*/g) ?? []).filter((k) => k !== 'abs' && k !== 'prev');
+}
+
 export function combineReports(existing: ParsedReport[] | undefined, incoming: ParsedReport[]): ParsedReport[] {
   const replaced = new Set(incoming.map((r) => r.meta.periodId));
   return [...(existing ?? []).filter((r) => !replaced.has(r.meta.periodId)), ...incoming];
@@ -344,14 +373,10 @@ export function buildDataset(reports: ParsedReport[]): MergeResult {
       { key: 'equity_ratio', labelDe: 'Eigenkapitalquote', formula: 'equity_total / total_assets', unit: 'ratio' },
       { key: 'fixed_assets_ratio', labelDe: 'Anlageintensität', formula: 'fixed_assets_total / total_assets', unit: 'ratio' },
     ],
-    checks: [
-      { id: 'balance_sums_equal', labelDe: 'Bilanzsumme Aktiva = Passiva', lhs: 'total_assets', rhs: 'total_equity_and_liabilities', views: ['balance'] },
-      { id: 'assets_composition', labelDe: 'Anlage- + Umlaufvermögen + RAP = Bilanzsumme', lhs: 'fixed_assets_total + current_assets_total + prepaid_expenses', rhs: 'total_assets', views: ['balance'] },
-      { id: 'liabilities_composition', labelDe: 'Eigenkapital + Sonderposten + Rückstellungen + Verbindlichkeiten = Bilanzsumme', lhs: 'equity_total + special_item_grants + provisions_total + liabilities_total', rhs: 'total_equity_and_liabilities', views: ['balance'] },
-      { id: 'fixed_assets_sum', labelDe: 'Immaterielle + Sachanlagen = Anlagevermögen', lhs: 'intangible_assets + tangible_assets_total', rhs: 'fixed_assets_total', views: ['balance'] },
-      { id: 'equity_composition', labelDe: 'Eigenkapital = Kapital + Rücklage + Jahresergebnis', lhs: 'subscribed_capital + capital_reserve + net_result_balance', rhs: 'equity_total', views: ['balance'] },
-      { id: 'net_result_consistent', labelDe: 'Jahresergebnis = Ergebnis in der Bilanz', lhs: 'net_result', rhs: 'net_result_balance', views: ['income'] },
-    ],
+    checks: CHECKS.filter((c) => {
+      const keys = [...formulaKeys(c.lhs), ...formulaKeys(c.rhs)];
+      return keys.every((k) => facts.has(k));
+    }),
     notes: notes.length > 0 ? notes : undefined,
     redactions: redactions.length > 0 ? redactions : undefined,
   };

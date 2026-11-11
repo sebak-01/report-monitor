@@ -307,12 +307,15 @@ export function findAnlagespiegelPage(pages: { page_number: number; text: string
   text: string;
 } | null {
   // The table page has a unit row and roll-forward columns; the Anhang only
-  // mentions the schedule in prose.
+  // mentions the schedule in prose. Roll-forward tables exist for
+  // Rückstellungen/Sonderposten too – only a real schedule prints
+  // cost/depreciation columns.
   return (
     pages.find(
       (p) =>
         /(?:^|\n)\s*(?:eur|euro)(?:\s+(?:eur|euro))+/im.test(p.text) &&
-        /Zug.nge|Abg.nge|Umbuchungen|Buchwert|Restbuchwert/i.test(p.text),
+        /Zug.nge|Abg.nge|Umbuchungen|Buchwert|Restbuchwert/i.test(p.text) &&
+        /Anschaffungs|Herstellungskosten|kumulierte|Anlagenspiegel/i.test(p.text),
     ) ?? null
   );
 }
