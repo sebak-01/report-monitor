@@ -1,4 +1,5 @@
 import { KpiCard } from '../components/KpiCard';
+import type { RawReport } from '../analysis/types';
 import { appliesTo, createLookup, previousPeriodId, type ValueLookup } from '../lib/dataset';
 import type { KpiCardModel } from '../lib/kpiCards';
 import type { ValidationReport } from '../lib/validate';
@@ -11,6 +12,13 @@ export interface ViewProps {
   periodId: string;
   /** Validation report restricted to this view. */
   report: ValidationReport;
+  /**
+   * The raw report extracts behind the dataset (own year plus prior-year
+   * comparison column each), when they were stored on import. The analysis
+   * uses them for the prior-year comparison; optional because value-level
+   * imports carry no extracts.
+   */
+  reports?: RawReport[];
 }
 
 export interface ViewContext {

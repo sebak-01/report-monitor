@@ -7,6 +7,7 @@ import type { Dataset } from '../types';
 import { reportForView, validateDataset } from './validate';
 import { IncomeView } from '../views/IncomeView';
 import { BalanceView } from '../views/BalanceView';
+import { AnalysisView } from '../views/AnalysisView';
 import { AnlagespiegelView } from '../views/AnlagespiegelView';
 import { ChartControls } from '../components/ChartControls';
 
@@ -74,6 +75,25 @@ describe('view smoke render', () => {
       // Every printed column of the schedule shows up as a table header.
       for (const column of dataset.schedules[0].columns) {
         expect(html).toContain(column.labelDe);
+      }
+    });
+
+    it(`renders the analysis view for ${file}`, () => {
+      const periodId = dataset.periods[dataset.periods.length - 1].id;
+      const html = renderToString(
+        <AnalysisView dataset={dataset} periodId={periodId} report={reportForView(validateDataset(dataset), 'analysis')} />,
+      );
+      expect(html).toContain('Prüfstatus');
+      expect(html).toContain('Kennzahlen');
+      expect(html).toContain('Eigenkapitalquote');
+      expect(html).toContain('Kennzahlen als CSV herunterladen');
+      expect(html).toContain('Diagramm als PNG herunterladen');
+      expect(html).toContain('Berechnung');
+      for (const period of dataset.periods) expect(html).toContain(`>${period.id}<`);
+      if (file === 'emptyDataset') {
+        // Without figures every metric cell reads n/a, never 0.
+        expect(html).toContain('n/a');
+        expect(html).not.toContain('0,0 %');
       }
     });
   }

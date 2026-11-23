@@ -17,16 +17,19 @@ import {
 } from './lib/upload/storage';
 import { DataView } from './views/DataView';
 import { reportForView, validateDataset } from './lib/validate';
-import type { Dataset } from './types';
+import type { Dataset, ViewMeta } from './types';
+import type { RawReport } from './analysis/types';
 import { AnlagespiegelView } from './views/AnlagespiegelView';
 import { BalanceView } from './views/BalanceView';
 import type { ViewProps } from './views/common';
+import { AnalysisView } from './views/AnalysisView';
 import { IncomeView } from './views/IncomeView';
 
 /** The component that renders each view id of the dataset. */
 const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
   balance: BalanceView,
   income: IncomeView,
+  analysis: AnalysisView,
   anlagespiegel: AnlagespiegelView,
   data: DataView,
 };
@@ -163,6 +166,7 @@ export default function App() {
     <ErrorBoundary key={effectiveId}>
       <Dashboard
         dataset={dataset}
+        reports={active?.reports?.map((r) => ({ periodId: r.meta.periodId, facts: r.facts }))}
         sourceOptions={sourceOptions}
         sourceId={effectiveId}
         onSourceChange={use}
@@ -174,6 +178,8 @@ export default function App() {
 
 interface DashboardProps {
   dataset: Dataset;
+  /** Raw extracts behind the dataset, for the analysis' prior-year comparison. */
+  reports?: RawReport[];
   sourceOptions: { id: string; name: string }[];
   sourceId: string;
   onSourceChange: (id: string) => void;
@@ -181,9 +187,19 @@ interface DashboardProps {
   empty: boolean;
 }
 
-function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: DashboardProps) {
-  // Only views this app can render are offered in the dropdown.
-  const views = useMemo(() => dataset.views.filter((v) => VIEW_COMPONENTS[v.id]), [dataset]);
+function Dashboard({ dataset, reports, sourceOptions, sourceId, onSourceChange, empty }: DashboardProps) {
+  // Only views this app can render are offered in the dropdown. The Analyse
+  // view is app-defined (not part of the dataset schema), so it is injected
+  // right after GuV and every stored dataset gets it without a migration.
+  const views = useMemo(() => {
+    const rendered = dataset.views.filter((v) => VIEW_COMPONENTS[v.id]);
+    if (rendered.some((v) => v.id === 'analysis')) return rendered;
+    const meta: ViewMeta = { id: 'analysis', labelDe: de.analysis.viewLabel, statements: [] };
+    const at = rendered.findIndex((v) => v.id === 'income');
+    return at === -1
+      ? [...rendered, meta]
+      : [...rendered.slice(0, at + 1), meta, ...rendered.slice(at + 1)];
+  }, [dataset]);
   const viewIds = useMemo(() => views.map((v) => v.id), [views]);
   const periodIds = useMemo(() => selectablePeriods(dataset).map((p) => p.id), [dataset]);
   const { view: selectedId, period, go } = useSelection(viewIds, periodIds);
@@ -253,7 +269,7 @@ function Dashboard({ dataset, sourceOptions, sourceId, onSourceChange, empty }: 
           <h2 className="view-title">{view.labelDe}</h2>
           {view.sourceDe && <p className="view-source">{view.sourceDe}</p>}
         </div>
-        <ViewComponent dataset={dataset} periodId={period} report={report} />
+        <ViewComponent dataset={dataset} periodId={period} report={report} reports={reports} />
       </main>
 
       <footer className="page-footer">{source?.extraction === 'upload' ? de.upload.footer : de.footer.note}</footer>

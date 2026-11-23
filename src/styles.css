@@ -1081,3 +1081,43 @@ details.card.collapsible > .card-subtitle {
 .card + .dropzone {
   margin-top: 16px;
 }
+
+/* Analysis view */
+.analysis-intro {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.metric-short {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.metric-details td {
+  padding: 0 8px 12px;
+  border-bottom: 0;
+}
+
+.validation-status--warn {
+  color: var(--cat-4);
+}
+
+.finding-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finding-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: 0.875rem;
+}
+
+.finding-list li:last-child {
+  border-bottom: 0;
+}

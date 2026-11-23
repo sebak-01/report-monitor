@@ -1,6 +1,7 @@
 import { de } from '../i18n/de';
 import { escapeHtml, formatEur, formatMioTick } from '../lib/format';
 import type { TrendModel } from '../lib/grouped';
+import type { ReactNode } from 'react';
 import { FONT, useEChart, type ChartTokens, type EChartsOption } from './chartTheme';
 
 interface TooltipItem {
@@ -87,10 +88,12 @@ interface Props {
   model: TrendModel;
   /** Period shown in the dashboard; marked in the chart. */
   selected: string;
+  /** Extra controls under the subtitle, e.g. the series picker of the analysis view. */
+  controls?: ReactNode;
 }
 
 /** Lines over all years, with the selected year marked, plus an accessible table. */
-export function TrendChart({ id, title = de.chart.trendTitle, subtitle = de.chart.trendSubtitle, model, selected }: Props) {
+export function TrendChart({ id, title = de.chart.trendTitle, subtitle = de.chart.trendSubtitle, model, selected, controls }: Props) {
   const containerRef = useEChart((tokens) => buildOption(model, selected, tokens), [model, selected]);
 
   return (
@@ -99,6 +102,7 @@ export function TrendChart({ id, title = de.chart.trendTitle, subtitle = de.char
         {title}
       </h3>
       {subtitle && <p className="card-subtitle">{subtitle}</p>}
+      {controls}
       <div
         ref={containerRef}
         className="chart"

@@ -53,6 +53,9 @@ export const formatPercentagePoints = (fractionDiff: number): string =>
 export const formatInteger = (value: number): string => integer.format(value);
 export const formatSignedInteger = (value: number): string => signedInteger.format(value);
 
+/** 126.34 -> "126,3" (e.g. index values) */
+export const formatDecimal1 = (value: number): string => d1.format(value);
+
 /** Formats a fact value according to its unit (used in tables). */
 export function formatByUnit(value: number | null, unit: Unit): string {
   if (value === null) return '–';

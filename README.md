@@ -30,6 +30,12 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
   - KPI cards: Umsatzerlöse, Jahresfehlbetrag, Personalaufwand, Personalaufwand im Verhältnis zum Umsatz
   - comparison chart of the main income statement items
   - the complete income statement as a table
+- **Analyse** (app-defined, offered for every dataset – see [Analysis view](#analysis-view-analyse))
+  - key figures per year (equity ratio, debt ratio, coverage, liquidity 1.–3. grade, margins, returns) with
+    formula, source positions and missing-input tooltips per year
+  - time series of chosen positions: absolute / index (base year = 100) / change vs. prior year, table with
+    year-over-year change, CAGR and outlier flags
+  - a plausibility status block (green/amber/red) with expandable findings, and CSV/PNG export
 - **Anlagespiegel** (fixed asset schedule of the Anhang) – shown when the dataset has one
   - the full matrix as printed: columns of the cost roll-forward, the accumulated depreciation and the book
     values, grouped under their super-headings; zeros omitted in the source are filled in from the roll-forward
@@ -65,7 +71,7 @@ anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" drop
 Limits: 15 MB per file, 50,000 rows, years only (no quarters), one unit per table upload, no `.xls`. The old `.xls`
 format and PDF files are rejected with a message.
 
-Not built yet: analytics, the Anhang views (accounting methods, Angaben zur Bilanz, Erläuterungen zur GuV,
+Not built yet: cross-company analytics, the Anhang views (accounting methods, Angaben zur Bilanz, Erläuterungen zur GuV,
 management and supervisory board) and the Corporate Governance Bericht.
 
 ## Quick start
@@ -126,12 +132,17 @@ src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv
                               entityMatch.ts, merge.ts, storage.ts (IndexedDB), renderable.ts (generic view fallback)
 src/lib/genericView.ts        cards and chart model of the generic "Daten" view
 src/lib/format.ts             German number formatting (Intl)
+src/lib/download.ts           browser download helpers (CSV text, chart PNG)
+src/analysis/                 pure analysis functions (no React): metrics.ts (key figures), timeseries.ts
+                              (YoY, CAGR, index, outliers), validation.ts (plausibility checks),
+                              export.ts (metrics CSV), types.ts – each with Vitest tests beside it
 src/i18n/de.ts                all user-visible strings that are not part of the data
 scripts/generate-datasets.ts  builds data/*.json from the report extracts in data/single-data/
 src/components/               ViewSelect, PeriodSelect, StatementTable, DataTable, KpiCard, ValidationPanel, RedactionNote,
                               UploadPage, MappingForm, SourceSelect, ErrorBoundary, ChartControls, useChartYears,
-                              GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts)
-src/views/                    BalanceView, IncomeView, AnlagespiegelView, DataView (what each dropdown entry shows)
+                              GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts),
+                              MetricTable, AnalysisTimeSeries, AnalysisChecks, AnalysisExport (Analyse view)
+src/views/                    BalanceView, IncomeView, AnalysisView, AnlagespiegelView, DataView (what each dropdown entry shows)
 ```
 
 ## Dataset format
@@ -187,13 +198,99 @@ Each check is evaluated for every period within the tolerance given in `conventi
 - **fail**: the sides differ, a key is unknown, or the formula is invalid
 - **skipped**: an input value is missing (`null`) or there is no previous period
 
+## Analysis view (Analyse)
+
+The **Analyse** dropdown entry (next to Bilanz and GuV) computes key figures, time series and plausibility
+checks over *all* periods of the loaded dataset. It is app-defined (not part of the dataset schema) and offered
+for every dataset, including older stored ones. The pure functions live in `src/analysis/` and are unit-tested
+with Vitest; all computation happens in the browser.
+
+### Kennzahlen (key figures)
+
+Every metric is a ratio computed per year from the reported line items. Values are shown per year; the
+expandable "Berechnung" row lists the formula, documented approximations and the source positions with their
+values per year.
+
+| Kennzahl | Calculation | Source positions |
+| --- | --- | --- |
+| Eigenkapitalquote | `Eigenkapital / Bilanzsumme` | `equity_total`, `total_assets` |
+| Verschuldungsgrad | `(Bilanzsumme − Eigenkapital) / Eigenkapital` | `total_assets`, `equity_total` |
+| Anlagendeckungsgrad (statisch) | `Eigenkapital / Anlagevermögen` | `equity_total`, `fixed_assets_total` |
+| Liquidität 1. Grades | `(liquide Mittel) / kurzfristiges Fremdkapital` | `cash`, `securities_current_total`¹, debt proxy |
+| Liquidität 2. Grades | `(liquide Mittel + Forderungen) / kurzfristiges Fremdkapital` | + `receivables_total` |
+| Liquidität 3. Grades | `Umlaufvermögen / kurzfristiges Fremdkapital` | `current_assets_total`, debt proxy |
+| EBIT-Marge | `EBIT / Gesamtleistung` | `operating_result` or `result_after_taxes` + `income_taxes` − `financial_result` or `net_result` + `interest_expense` − `interest_income`; `total_performance` (or `revenue`) |
+| Jahresergebnis-Marge | `Jahresergebnis / Gesamtleistung` | `net_result`, `total_performance` (or `revenue`) |
+| Personalaufwandsquote | `Personalaufwand / Gesamtleistung` | `personnel_expenses_total`, `total_performance` (or `revenue`) |
+| Materialaufwandsquote | `Materialaufwand / Gesamtleistung` | `material_expenses_total`, `total_performance` (or `revenue`) |
+| Eigenkapitalrentabilität | `Jahresergebnis / Eigenkapital` | `net_result`, `equity_total` |
+| Gesamtkapitalrentabilität | `(Jahresergebnis + Zinsaufwand) / Bilanzsumme` | `net_result`, `interest_expense`¹, `total_assets` |
+
+Documented approximations (also shown in the UI under each formula):
+
+- **Short-term debt proxy**: the dataset carries no maturity structure for provisions and liabilities, so
+  `kurzfristiges Fremdkapital = Bilanzsumme − Eigenkapital − Pensionsrückstellungen`. The three liquidity
+  grades use this denominator.
+- **Anlagendeckungsgrad** is the *static* variant (`Eigenkapital / Anlagevermögen`); the classic grade I
+  (equity + long-term debt) is not derivable without maturity data.
+- **EBIT** is not a printed line in the Gesamtkostenverfahren: the printed `operating_result`
+  (Betriebsergebnis) is used, otherwise EBIT is derived from the GuV chain
+  (`result_after_taxes + income_taxes − financial_result`), otherwise from the interest lines
+  (`net_result + interest_expense − interest_income`, without the tax shield). The derivation actually
+  used per year is listed in the "Berechnung" details.
+- **Gesamtkapitalrentabilität** is simplified without the tax shield of the interest expense.
+- **Margins** use the **Gesamtleistung** (`total_performance`) as denominator; many smaller statements do
+  not print one, so the **Umsatzerlöse** (`revenue`) is used as the fallback base (disclosed per year in the
+  "Berechnung" details).
+
+Missing input handling: a required position without a value for a year makes the metric `n/a` for that year
+(tooltip lists the missing positions) – it is never silently treated as 0. Optional additive components
+(marked ¹ above: `securities_current_total`, `interest_expense`, `interest_income`, `pension_provisions`)
+count as 0 when the report does not disclose them and are listed in the "Berechnung" details as
+"nicht ausgewiesen → 0 angesetzt".
+
+### Zeitreihen
+
+Positions to plot are chosen in a multi-select grouped into Bilanz and GuV (up to six at once). The line
+chart (with an accessible table twin) has three modes: absolute values, an index with a selectable base year
+(base = 100) and the change against the previous year in %. The table below shows the values per year, the
+year-over-year change (absolute and %) and the CAGR over the full period (n/a when an endpoint is not
+positive). Values far from the series mean are flagged with ▲: a point is an outlier when it deviates by at
+least 2 standard deviations (z-score; constant `OUTLIER_Z_THRESHOLD` in `src/analysis/timeseries.ts`, at
+least three values needed).
+
+### Prüfstatus
+
+A compact green/amber/red block at the top with an expandable list of findings (German):
+
+- **Balance identity**: Aktiva = Passiva per year, and Jahresergebnis of the GuV = the balance sheet's
+  `net_result_balance`, within `conventions.tolerance` (default 0.01).
+- **Sub-totals**: each group total equals the sum of its components (e.g. Anlagevermögen = immaterielle + Sach-
+  + Finanzanlagen, Umlaufvermögen, Eigenkapital composition, Verbindlichkeiten, Material-/Personalaufwand,
+  the GuV chain up to the result after taxes). A position the company never prints counts as 0; a position
+  without a value for the year makes that check "nicht prüfbar" (a missing figure is a skip, not a zero).
+- **Prior-year comparison**: the prior-year column of report N+1 is compared with the own-year values of
+  report N; deviations (possible extraction errors or reclassifications) are listed. This check needs the raw
+  extracts stored at import (`StoredDataset.reports`); datasets imported at value level show it as
+  "nicht prüfbar".
+
+Status rule: red when a check fails, amber when there are deviations or nothing was testable, green when
+everything passed.
+
+### Export
+
+- **Kennzahlen als CSV**: one row per metric, one column per year, values in percentage points. German
+  locale: semicolon separator, decimal comma, UTF-8 with BOM (opens directly in Excel).
+- **Diagramm als PNG**: saves the visible time series chart (locally via the ECharts instance, no upload).
+
 ## Roadmap
 
 1. **Display** (this version): Bilanz and GuV views with the complete statements, trends, validation.
 2. **Upload frame** (done for CSV, XLSX, JSON and report extracts): drag and drop, column mapping, preview, stored in the browser only; several report extracts merge into one multi-year dataset.
 3. **Anlagespiegel** (this version): the fixed asset schedule as a view of its own, read from the report extract or from the dataset's `schedules`.
 4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles.
-5. **Analytics**: statistical charts and cross-year / cross-company comparisons, probably with DuckDB-WASM.
+5. **Analytics**: the Analyse view covers per-company key figures, time series and plausibility checks (this
+   version); cross-year / cross-company comparisons are next, probably with DuckDB-WASM.
 6. **Other companies and open data**: discover reports through the metadata of the open data portal
    (DCAT-AP.de), then generalize extraction to arbitrary report layouts.
 

@@ -239,6 +239,73 @@ export const de = {
     },
   },
 
+  analysis: {
+    viewLabel: 'Analyse',
+    intro:
+      'Kennzahlen, Zeitreihen und Prüfstatus über alle Geschäftsjahre – berechnet aus den Positionen ' +
+      'dieses Datensatzes. Es werden keine Daten übertragen.',
+    kennzahlenTitle: 'Kennzahlen',
+    kennzahlenSubtitle:
+      'Werte je Geschäftsjahr. „n/a“ heißt: eine Eingangsposition fehlt im Bericht; die Berechnungsdetails nennen sie.',
+    metricColumn: 'Kennzahl',
+    calculation: 'Berechnung',
+    formulaLabel: 'Formel',
+    sourcesLabel: 'Verwendete Positionen',
+    inputColumn: 'Position',
+    noValue: '–',
+    na: 'n/a',
+    naTooltip: (missing: string) => `Fehlende Positionen: ${missing}`,
+    assumedZero: (keys: string) => `${keys}: nicht ausgewiesen → 0 angesetzt`,
+    assumedZeroMark: '0 *',
+    timeseriesTitle: 'Zeitreihen',
+    timeseriesSubtitle:
+      'Beliebige Positionen über alle Geschäftsjahre; die senkrechte Linie markiert das gewählte Geschäftsjahr.',
+    pickPositions: 'Positionen',
+    groupBalance: 'Bilanz',
+    groupIncome: 'Gewinn- und Verlustrechnung',
+    maxSeries: 'Höchstens sechs Positionen gleichzeitig',
+    mode: 'Darstellung',
+    modeAbsolute: 'Absolute Werte',
+    modeIndex: 'Index (Basisjahr = 100)',
+    modeChange: 'Veränderung zum Vorjahr',
+    baseYear: 'Basisjahr',
+    tableTitle: 'Veränderung und Wachstum',
+    measureColumn: 'Größe',
+    valueRow: 'Wert',
+    yoyAbs: 'Δ absolut',
+    yoyRel: 'Δ in %',
+    cagr: 'Ø p. a. (CAGR)',
+    axisIndex: 'Index',
+    cagrNote:
+      'Durchschnittliche jährliche Veränderung über die gesamte Periode; „n/a“ bei nicht positiven Endpunkten.',
+    outlierRule: (threshold: number) =>
+      `Markiert werden Werte, die um mindestens ${threshold} Standardabweichungen vom Mittelwert der ` +
+      'Reihe abweichen (Z-Score über die Werte der Position).',
+    outlierMark: (z: string) => `Auffällig: ${z} Standardabweichungen vom Mittelwert der Reihe`,
+    noSeries: 'Bitte mindestens eine Position auswählen.',
+    checksTitle: 'Prüfstatus',
+    checksIntro: 'Bilanzgleichung, Summenbildungen und Vorjahresabgleich über alle Geschäftsjahre.',
+    statusGreen: 'Plausibel',
+    statusAmber: 'Mit Hinweisen',
+    statusRed: 'Abweichungen gefunden',
+    findings: 'Befunde anzeigen',
+    counts: (passed: number, warned: number, failed: number, skipped: number) =>
+      `${passed} ohne Befund · ${warned} Hinweise · ${failed} Abweichungen · ${skipped} nicht prüfbar`,
+    severity: {
+      pass: 'ohne Befund',
+      warn: 'Hinweis',
+      fail: 'Abweichung',
+      skip: 'nicht prüfbar',
+    },
+    priorYearUnavailable: 'Vorjahresabgleich nicht möglich (keine Rohberichte zu diesem Datensatz gespeichert).',
+    exportTitle: 'Export',
+    exportCsv: 'Kennzahlen als CSV herunterladen',
+    exportCsvHint: 'Semikolon-getrennt mit Dezimalkomma; für Excel geeignet.',
+    exportChart: 'Diagramm als PNG herunterladen',
+    exportChartHint: 'Speichert das sichtbare Zeitreihen-Diagramm als Bild.',
+    exportNoChart: 'Kein Diagramm zum Speichern vorhanden.',
+  },
+
   anlagespiegel: {
     title: 'Anlagespiegel',
     subtitle: 'Entwicklung der Anschaffungs- und Herstellungskosten und der Abschreibungen, Beträge in EUR',
