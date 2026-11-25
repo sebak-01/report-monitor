@@ -55,7 +55,7 @@ function main(): void {
 
     console.log(`${company} -> ${outFile}  (im Dashboard über „Daten hochladen" laden)`);
     console.log(
-      `  ${dataset.facts.length} Positionen, ${dataset.periods.length} Jahre (${dataset.periods.map((p) => p.id).join(', ')}), Anlagespiegel: ${dataset.schedules?.[0]?.rows.length ?? 0} Zeilen`,
+      `  ${dataset.facts.length} Positionen, ${dataset.periods.length} Jahre (${dataset.periods.map((p) => p.id).join(', ')})`,
     );
     console.log(`  Prüfungen: ${report.passed} bestanden, ${report.failed} fehlgeschlagen, ${report.skipped} übersprungen`);
     for (const result of report.results.filter((r) => r.status === 'fail')) {

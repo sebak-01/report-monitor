@@ -1097,8 +1097,27 @@ details.card.collapsible > .card-subtitle {
   color: var(--text-secondary);
 }
 
-.metric-details td {
-  padding: 0 8px 12px;
+/* Metric list: a Kennzahl and its foldable "Berechnung" form one group; the
+   row rule separates groups (below the foldable), not a Kennzahl from its own. */
+.card table tr.metric-row > th,
+.card table tr.metric-row > td {
+  border-bottom: 0;
+}
+
+.card table tr.metric-details > td {
+  padding: 2px 8px 14px;
+  border-bottom: 1px solid var(--grid);
+}
+
+.card table tr.metric-details:last-child > td {
+  border-bottom: 0;
+}
+
+.metric-details .table-view {
+  margin-top: 2px;
+}
+
+.metric-details .table-view table tr:last-child > * {
   border-bottom: 0;
 }
 

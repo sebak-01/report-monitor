@@ -148,7 +148,6 @@ export const emptyDataset: Dataset = {
   views: [
     { id: 'balance', labelDe: 'Bilanz', statements: ['balance_assets', 'balance_liabilities'] },
     { id: 'income', labelDe: 'Gewinn- und Verlustrechnung', statements: ['income'] },
-    { id: 'anlagespiegel', labelDe: 'Anlagespiegel', statements: [], schedules: [] },
     { id: 'data', labelDe: 'Daten', statements: ['notes'] },
   ],
   facts: FACTS,

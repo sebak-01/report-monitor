@@ -77,7 +77,6 @@ describe('empty start view (no data loaded)', () => {
     const views = emptyDataset.views.map((v) => v.id);
     expect(views).toContain('balance');
     expect(views).toContain('income');
-    expect(views).toContain('anlagespiegel');
   });
 
   it('reads every figure as "–" (null) for both placeholder years', () => {

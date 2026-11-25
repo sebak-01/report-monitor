@@ -60,7 +60,7 @@ export function MetricTable({ rows, periodIds, dataset }: Props) {
               }
               return (
                 <Fragment key={row.spec.id}>
-                  <tr>
+                  <tr className="metric-row">
                     <th scope="row">
                       {row.spec.labelDe}
                       <span className="metric-short">{row.spec.shortDe}</span>

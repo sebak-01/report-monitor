@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Dataset, Fact, Period, Schedule, SourceDoc } from '../../types';
+import type { Dataset, Fact, Period, SourceDoc } from '../../types';
 import { parseReport } from '../extract/buildDataset';
 import { importDataset, importReports, matchCandidates, mergeDatasets, storedFileNames } from './merge';
 
@@ -12,7 +12,6 @@ function ds(opts: {
   periods: Period[];
   facts: Fact[];
   sources?: SourceDoc[];
-  schedules?: Schedule[];
   formerNames?: { name: string }[];
 }): Dataset {
   return {
@@ -24,7 +23,6 @@ function ds(opts: {
     statements: {},
     views: [],
     facts: opts.facts,
-    schedules: opts.schedules,
     derivedKpis: [],
     checks: [],
   };
@@ -121,27 +119,6 @@ describe('mergeDatasets', () => {
     );
     expect(merged.dataset.entity.name).toBe('Muster Technik GmbH');
     expect(merged.dataset.entity.formerNames?.map((f) => f.name)).toEqual(['Muster-Technik GmbH']);
-  });
-
-  it('merges schedules row by row and column by column', () => {
-    const schedule = (values: Record<string, Record<string, number | null>>, extraColumn = false): Schedule => ({
-      id: 'anlagespiegel',
-      labelDe: 'Anlagespiegel',
-      unit: 'EUR',
-      columns: [
-        { key: 'cost-start', labelDe: 'AHK 01.01.', role: 'cost-start' },
-        ...(extraColumn ? [{ key: 'additions', labelDe: 'Zugänge', role: 'additions' as const }] : []),
-      ],
-      rows: [{ key: 'machines', labelDe: 'Maschinen', values }],
-    });
-    const merged = mergeDatasets(
-      ds({ name: 'X', periods: [own('2022')], facts: [], schedules: [schedule({ '2022': { 'cost-start': 100, additions: 10 } }, true)] }),
-      ds({ name: 'X', periods: [own('2023')], facts: [], schedules: [schedule({ '2023': { 'cost-start': 110 }, '2022': { 'cost-start': 105 } })] }),
-    );
-    const row = merged.dataset.schedules![0].rows[0];
-    expect(row.values['2022']['cost-start']).toBe(100);
-    expect(row.values['2023']['cost-start']).toBe(110);
-    expect(merged.dataset.schedules![0].columns.map((c) => c.key)).toEqual(['cost-start', 'additions']);
   });
 });
 

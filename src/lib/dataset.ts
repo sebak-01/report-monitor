@@ -1,4 +1,4 @@
-import type { Dataset, Period, Schedule, ScheduleRow, SourceDoc } from '../types';
+import type { Dataset, Period, SourceDoc } from '../types';
 import { parseNumber } from './upload/numbers';
 
 export class DatasetError extends Error {
@@ -30,7 +30,7 @@ function migrate(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
- * Fact and schedule values must be JSON numbers or null. Hand-edited datasets
+ * Fact values must be JSON numbers or null. Hand-edited datasets
  * often carry German amounts as text ("2.672.461,76"); these are normalized.
  */
 function normalizeValue(factKey: string, value: unknown): number | null {
@@ -49,50 +49,6 @@ function normalizeValue(factKey: string, value: unknown): number | null {
     return parsed;
   }
   throw new DatasetError(`Der Wert von "${factKey}" ist weder eine Zahl noch null`);
-}
-
-function validateSchedule(raw: unknown, index: number): Schedule {
-  if (!isRecord(raw) || typeof raw.id !== 'string' || typeof raw.labelDe !== 'string') {
-    throw new DatasetError(`Der Anhangs-/Tabellenblock ${index + 1} braucht "id" und "labelDe"`);
-  }
-  if (!Array.isArray(raw.columns) || raw.columns.length === 0) {
-    throw new DatasetError(`Der Block "${raw.id}" braucht mindestens eine Spalte`);
-  }
-  if (!Array.isArray(raw.rows)) {
-    throw new DatasetError(`Der Block "${raw.id}" braucht eine Liste von Zeilen`);
-  }
-  const columnKeys = new Set<string>();
-  for (const c of raw.columns) {
-    if (!isRecord(c) || typeof c.key !== 'string' || typeof c.labelDe !== 'string' || typeof c.role !== 'string') {
-      throw new DatasetError(`Jede Spalte von "${raw.id}" braucht "key", "labelDe" und "role"`);
-    }
-    if (columnKeys.has(c.key)) {
-      throw new DatasetError(`Doppelter Spaltenschlüssel "${c.key}" in "${raw.id}"`);
-    }
-    columnKeys.add(c.key);
-  }
-  const rowKeys = new Set<string>();
-  for (const r of raw.rows) {
-    if (!isRecord(r) || typeof r.key !== 'string' || typeof r.labelDe !== 'string' || !isRecord(r.values)) {
-      throw new DatasetError(`Jede Zeile von "${raw.id}" braucht "key", "labelDe" und "values"`);
-    }
-    if (rowKeys.has(r.key)) {
-      throw new DatasetError(`Doppelter Zeilenschlüssel "${r.key}" in "${raw.id}"`);
-    }
-    rowKeys.add(r.key);
-    for (const [periodId, cells] of Object.entries(r.values as ScheduleRow['values'])) {
-      if (!isRecord(cells)) {
-        throw new DatasetError(`Die Werte von "${r.key}" (${periodId}) müssen ein Objekt sein`);
-      }
-      for (const [colKey, value] of Object.entries(cells)) {
-        if (!columnKeys.has(colKey)) {
-          throw new DatasetError(`Unbekannte Spalte "${colKey}" in "${r.key}" (${periodId})`);
-        }
-        cells[colKey] = normalizeValue(`${r.key}.${colKey}`, value);
-      }
-    }
-  }
-  return raw as unknown as Schedule;
 }
 
 /**
@@ -155,9 +111,6 @@ export function parseDataset(input: unknown): Dataset {
     factKeys.add(key);
   }
 
-  const schedules = raw.schedules === undefined ? [] : requireArray(raw, 'schedules');
-  const parsedSchedules = schedules.map((s, i) => validateSchedule(s, i));
-
   const derivedKpis = requireArray(raw, 'derivedKpis');
   for (const k of derivedKpis) {
     if (!isRecord(k) || typeof k.key !== 'string' || typeof k.formula !== 'string') {
@@ -177,12 +130,13 @@ export function parseDataset(input: unknown): Dataset {
     }
   }
 
+  // A leftover "schedules" key of older dataset files is dropped, not passed on.
+  const { schedules: _schedules, ...rest } = raw;
   return {
-    ...(raw as unknown as Dataset),
+    ...(rest as unknown as Dataset),
     sources: sources as SourceDoc[],
     periods: periods as Period[],
     facts: facts as Dataset['facts'],
-    schedules: parsedSchedules.length > 0 ? parsedSchedules : undefined,
     derivedKpis: derivedKpis as Dataset['derivedKpis'],
     checks: checks as Dataset['checks'],
   };

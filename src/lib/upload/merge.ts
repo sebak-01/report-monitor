@@ -10,7 +10,7 @@
  * report extracts can be rebuilt from scratch (identical to dropping all files
  * at once), everything else is merged at dataset level.
  */
-import type { Check, Dataset, DerivedKpi, Fact, Note, Period, Redaction, Schedule, ScheduleRow, SourceDoc, ViewMeta } from '../../types';
+import type { Check, Dataset, DerivedKpi, Fact, Note, Period, Redaction, SourceDoc, ViewMeta } from '../../types';
 import { buildDataset, combineReports, type ParsedReport } from '../extract/buildDataset';
 import { sameEntityAny } from './entityMatch';
 import { DEDICATED_VIEWS, withGenericView } from './renderable';
@@ -108,49 +108,6 @@ function mergeFacts(existing: Fact[], incoming: Fact[], incomingOwn: Set<string>
   return out;
 }
 
-function mergeScheduleRow(target: ScheduleRow, row: ScheduleRow, incomingOwn: Set<string>, warnings: string[]): void {
-  for (const [periodId, cells] of Object.entries(row.values)) {
-    if (!target.values[periodId]) {
-      target.values[periodId] = { ...cells };
-      continue;
-    }
-    for (const [col, value] of Object.entries(cells)) {
-      mergeCell(target.values[periodId], col, value, winnerFor(periodId, incomingOwn), `${row.labelDe}, ${periodId}`, warnings);
-    }
-  }
-  if (row.absentIn) target.absentIn = [...new Set([...(target.absentIn ?? []), ...row.absentIn])];
-}
-
-function mergeSchedules(
-  existing: Schedule[] | undefined,
-  incoming: Schedule[] | undefined,
-  incomingOwn: Set<string>,
-  warnings: string[],
-): Schedule[] | undefined {
-  if (!existing || existing.length === 0) return incoming ? (JSON.parse(JSON.stringify(incoming)) as Schedule[]) : undefined;
-  if (!incoming) return existing;
-  const out = JSON.parse(JSON.stringify(existing)) as Schedule[];
-  for (const schedule of incoming) {
-    const target = out.find((s) => s.id === schedule.id);
-    if (!target) {
-      out.push(JSON.parse(JSON.stringify(schedule)) as Schedule);
-      continue;
-    }
-    for (const col of schedule.columns) {
-      if (!target.columns.some((c) => c.key === col.key)) target.columns.push({ ...col });
-    }
-    for (const row of schedule.rows) {
-      const match = target.rows.find((r) => r.key === row.key) ?? target.rows.find((r) => r.labelDe === row.labelDe);
-      if (!match) {
-        target.rows.push(JSON.parse(JSON.stringify(row)) as ScheduleRow);
-        continue;
-      }
-      mergeScheduleRow(match, row, incomingOwn, warnings);
-    }
-  }
-  return out;
-}
-
 function mergePeriods(existing: Period[], incoming: Period[], existingOwn: Set<string>, incomingOwn: Set<string>): Period[] {
   const out = existing.map((p) => ({ ...p }));
   const byId = new Map(out.map((p) => [p.id, p]));
@@ -186,11 +143,10 @@ function mergeViews(existing: ViewMeta[], incoming: ViewMeta[]): ViewMeta[] {
   for (const view of incoming) {
     const target = out.find((v) => v.id === view.id);
     if (!target) {
-      out.push({ ...view, statements: [...view.statements], schedules: view.schedules ? [...view.schedules] : undefined });
+      out.push({ ...view, statements: [...view.statements] });
       continue;
     }
     target.statements = [...new Set([...target.statements, ...view.statements])];
-    if (view.schedules) target.schedules = [...new Set([...(target.schedules ?? []), ...view.schedules])];
   }
   return out;
 }
@@ -240,7 +196,6 @@ export function mergeDatasets(existing: Dataset, incoming: Dataset): MergeResult
 
   const periods = mergePeriods(existing.periods, incoming.periods, existingOwn, incomingOwn);
   const facts = mergeFacts(existing.facts, incoming.facts, incomingOwn, warnings);
-  const schedules = mergeSchedules(existing.schedules, incoming.schedules, incomingOwn, warnings);
 
   // Periods that only appear inside values (comparison columns) still need an entry.
   const known = new Set(periods.map((p) => p.id));
@@ -266,7 +221,6 @@ export function mergeDatasets(existing: Dataset, incoming: Dataset): MergeResult
     statements: { ...incoming.statements, ...existing.statements },
     views: mergeViews(existing.views, incoming.views),
     facts,
-    schedules: schedules && schedules.length > 0 ? schedules : undefined,
     derivedKpis: unionBy<DerivedKpi>(existing.derivedKpis ?? [], incoming.derivedKpis ?? [], (k) => k.key),
     checks: unionBy<Check>(existing.checks ?? [], incoming.checks ?? [], (c) => c.id),
     notes: notes.length > 0 ? notes : undefined,

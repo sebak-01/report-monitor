@@ -1,7 +1,7 @@
 import type { Dataset } from '../../types';
 
 /** Views the dashboard has a dedicated component for; everything else gets the generic "data" view. */
-export const DEDICATED_VIEWS = ['balance', 'income', 'anlagespiegel'];
+export const DEDICATED_VIEWS = ['balance', 'income'];
 
 /**
  * Makes sure a loaded dataset can be shown. The dashboard has dedicated views for "balance" and "income".

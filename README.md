@@ -36,12 +36,6 @@ the current one. Lines that only exist in some years' layouts (e.g. Verlustvortr
   - time series of chosen positions: absolute / index (base year = 100) / change vs. prior year, table with
     year-over-year change, CAGR and outlier flags
   - a plausibility status block (green/amber/red) with expandable findings, and CSV/PNG export
-- **Anlagespiegel** (fixed asset schedule of the Anhang) – shown when the dataset has one
-  - the full matrix as printed: columns of the cost roll-forward, the accumulated depreciation and the book
-    values, grouped under their super-headings; zeros omitted in the source are filled in from the roll-forward
-  - Restbuchwert, Zugänge and the year's depreciation as headline figures, a trend of the main items
-  - roll-forward checks (AHK and AfA movements, book value = cost − depreciation) in the check panel
-  - when the source blacks the schedule out, the view shows the notice instead of the table
 - each view shows the plausibility checks that belong to it; figures a company's layout does not have are left out
   (the Bilanz keeps the § 266 posts as empty rows instead, see the "Anzeige nach §266 HGB" checkbox)
 - light and dark mode (follows the OS setting, or set `data-theme="light|dark"` on `<html>`)
@@ -57,8 +51,8 @@ anywhere and the result is kept in the browser's IndexedDB (a "Datenquelle" drop
    with its own checks and imported as is. Other JSON (a list of rows, or `{ "Umsatz": { "2023": 1 } }`) is treated
    like a table.
 3. A **report extract** (`{ "source_url": …, "pages": [{ "text": … }] }`, the `*_extracted.json` files of the
-   extraction tooling) is read as the PDF text layer: Bilanz, Gewinn- und Verlustrechnung and the Anlagespiegel are recognised
-   by label, the Anlagespiegel columns by their roll-forward identities. Several extracts (one file per year of the
+   extraction tooling) is read as the PDF text layer: Bilanz and Gewinn- und Verlustrechnung are recognised
+   by label. Several extracts (one file per year of the
    same company) are merged into one multi-year dataset; the report of a year is the reference for that year, its
    prior-year column fills gaps and differing figures are reported.
 4. For a **table** the app guesses the header row, the label column and the year columns (headers such as `2023`,
@@ -118,7 +112,7 @@ data/single-data/            report extracts (*_extracted.json), one folder per 
 src/types.ts                  dataset format
 src/lib/expression.ts         safe parser/evaluator for the formulas inside datasets (no eval)
 src/lib/formula.ts            evaluates a formula for one period, reports missing data explicitly
-src/lib/validate.ts           runs all reconciliation checks; splits the report by view; roll-forward checks of schedules
+src/lib/validate.ts           runs all reconciliation checks; splits the report by view
 src/lib/dataset.ts            runtime shape check, value lookup, period helpers
 src/lib/emptyDataset.ts       the dataset behind the empty start view: every figure null
 src/lib/statementRows.ts      rows of a statement table (numbering, hierarchy, printed values, change)
@@ -126,7 +120,7 @@ src/lib/balanceLayout.ts      § 266 HGB skeleton of the Bilanz (Aktiva/Passiva)
 src/lib/kpiCards.ts           headline KPIs per view and their change against the previous period
 src/lib/grouped.ts            models for the grouped and the stacked bar charts
 src/lib/extract/              report extracts (*_extracted.json) -> dataset: numbers.ts, rows.ts, detect.ts,
-                              statements.ts (Bilanz/GuV by label), anlagespiegel.ts (matrix + roll-forward solver),
+                              statements.ts (Bilanz/GuV by label),
                               buildDataset.ts (one or more reports -> multi-year dataset)
 src/lib/upload/               upload frame: csv.ts, numbers.ts, readFile.ts (csv/xlsx/json/extract), mapping.ts (table -> dataset),
                               entityMatch.ts, merge.ts, storage.ts (IndexedDB), renderable.ts (generic view fallback)
@@ -142,7 +136,7 @@ src/components/               ViewSelect, PeriodSelect, StatementTable, DataTabl
                               UploadPage, MappingForm, SourceSelect, ErrorBoundary, ChartControls, useChartYears,
                               GroupedBarChart, StackedBarChart, TrendChart (ECharts, shared setup in chartTheme.ts),
                               MetricTable, AnalysisTimeSeries, AnalysisChecks, AnalysisExport (Analyse view)
-src/views/                    BalanceView, IncomeView, AnalysisView, AnlagespiegelView, DataView (what each dropdown entry shows)
+src/views/                    BalanceView, IncomeView, AnalysisView, DataView (what each dropdown entry shows)
 ```
 
 ## Dataset format
@@ -167,15 +161,10 @@ A dataset (schema version 0.4) is one JSON file:
   - A value of `null` means "not printed or redacted in the source" and is never treated as zero.
 - `derivedKpis`: formulas over fact keys, e.g. `equity_total / total_assets`. `revenue[prev]` is the value of the
   previous period.
-- `schedules` (optional): reported matrices such as the Anlagespiegel — rows × columns per period. The column
-  `role` (`cost-start`, `additions`, `disposals`, `transfers`, `cost-end`, `accdep-start`, `dep-expense`,
-  `dep-disposals`, `dep-transfers`, `accdep-end`, `write-ups`, `book-value`, `book-value-prior`) names the column
-  for the roll-forward checks; the printed labels differ per company. Rows store one value map per period, keyed by
-  column key. A view lists its schedules in `schedules` beside its `statements`.
 - `checks`: reconciliation rules `lhs = rhs`, each assigned to the `views` in which it is shown, e.g.
   `fixed_assets_total + current_assets_total + prepaid_expenses` = `total_assets`
-- `notes`: remarks from the Anhang, shown as text in the Anlagespiegel and Daten views
-- `redactions`: things the source blacks out or omits (`kind`: `redacted` | `missing`; optional `periods`), shown as a notice in the Anlagespiegel and Daten views instead of being left out
+- `notes`: remarks from the Anhang, shown as text in the Daten view
+- `redactions`: things the source blacks out or omits (`kind`: `redacted` | `missing`; optional `periods`), shown as a notice in the Daten view instead of being left out
 
 Units: `EUR`, `TEUR` (thousand euros), `count`, `pct` (88.9 means 88.9 %) and `ratio` (0.269 means 26.9 %).
 
@@ -287,11 +276,10 @@ everything passed.
 
 1. **Display** (this version): Bilanz and GuV views with the complete statements, trends, validation.
 2. **Upload frame** (done for CSV, XLSX, JSON and report extracts): drag and drop, column mapping, preview, stored in the browser only; several report extracts merge into one multi-year dataset.
-3. **Anlagespiegel** (this version): the fixed asset schedule as a view of its own, read from the report extract or from the dataset's `schedules`.
-4. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles.
-5. **Analytics**: the Analyse view covers per-company key figures, time series and plausibility checks (this
+3. **PDF extraction**: confirm every recognized value against the page image; per-company extraction profiles.
+4. **Analytics**: the Analyse view covers per-company key figures, time series and plausibility checks (this
    version); cross-year / cross-company comparisons are next, probably with DuckDB-WASM.
-6. **Other companies and open data**: discover reports through the metadata of the open data portal
+5. **Other companies and open data**: discover reports through the metadata of the open data portal
    (DCAT-AP.de), then generalize extraction to arbitrary report layouts.
 
 ## Data source and license

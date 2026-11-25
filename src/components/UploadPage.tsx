@@ -431,7 +431,6 @@ function ExtractImport({
   const dataset = result.item?.dataset ?? null;
   const periods = dataset?.periods.map((p) => p.id).join(', ') ?? '';
   const factCount = dataset?.facts.length ?? 0;
-  const scheduleRows = dataset?.schedules?.reduce((n, s) => n + s.rows.length, 0) ?? 0;
 
   return (
     <section className="card" aria-labelledby="extract-title">
@@ -445,7 +444,6 @@ function ExtractImport({
               <strong>{report.meta.periodId}</strong>{' '}
               <span className="muted">
                 · {report.fileName} · {report.facts.length} Positionen
-                {report.schedule ? ` · Anlagespiegel (${report.schedule.rows.length} Zeilen)` : ''}
               </span>
             </span>
           </li>
@@ -470,7 +468,6 @@ function ExtractImport({
         <>
           <p>
             <strong>{de.upload.resultTitle}:</strong> {de.upload.result(factCount, periods)}
-            {scheduleRows > 0 ? ` · ${de.upload.scheduleRows(scheduleRows)}` : ''}
           </p>
           <NameField value={name} onChange={setName} />
         </>

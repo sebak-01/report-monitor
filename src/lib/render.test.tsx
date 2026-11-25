@@ -8,7 +8,6 @@ import { reportForView, validateDataset } from './validate';
 import { IncomeView } from '../views/IncomeView';
 import { BalanceView } from '../views/BalanceView';
 import { AnalysisView } from '../views/AnalysisView';
-import { AnlagespiegelView } from '../views/AnlagespiegelView';
 import { ChartControls } from '../components/ChartControls';
 
 // Datasets the user generated locally (npm run generate:datasets); never in git.
@@ -44,9 +43,8 @@ describe('view smoke render', () => {
       expect((income.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(1);
       expect((balance.match(/chart-toolbar/g) ?? []).length).toBeGreaterThanOrEqual(2);
 
-      // Figures the dashboard does not show: auditor fee, Anlagenspiegel.
+      // Figures the dashboard does not show: auditor fee.
       expect(income).not.toContain('Abschlussprüfer');
-      expect(balance).not.toContain('Anlagenspiegel');
 
       // The Anhang sections are gone (check labels of the validation panel may
       // still name such positions).
@@ -61,20 +59,6 @@ describe('view smoke render', () => {
         expect(balance).toContain('aria-expanded="false"');
         expect(income).toContain('Personalaufwand im Verhältnis zum Umsatz');
         expect(income).not.toContain('Beschäftigte');
-      }
-    });
-
-    it(`renders the Anlagespiegel for ${file}`, () => {
-      if (!dataset.schedules?.length) return;
-      const report = validateDataset(dataset);
-      const periodId = dataset.periods[dataset.periods.length - 1].id;
-      const html = renderToString(
-        <AnlagespiegelView dataset={dataset} periodId={periodId} report={reportForView(report, 'anlagespiegel')} />,
-      );
-      expect(html).toContain('Anlagespiegel');
-      // Every printed column of the schedule shows up as a table header.
-      for (const column of dataset.schedules[0].columns) {
-        expect(html).toContain(column.labelDe);
       }
     });
 

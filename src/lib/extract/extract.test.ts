@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseAnlagespiegel, solveRow, findAnlagespiegelPage } from './anlagespiegel';
 import { buildDataset, combineReports, parseReport } from './buildDataset';
 import { looksLikeExtract, readReportMeta } from './detect';
 import { numbersIn, pair } from './numbers';
 import { parseStatements } from './statements';
-
-const LAYOUT_IFOS =
-  'Anschaffungs-, Zugänge Abgänge Umbuchungen Anschaffungs-, kumulierte Abschreibung Abgänge Umbuchungen kumulierte Buchwert\n' +
-  'Herstellungs- Herstellungs- Abschreibung Geschäftsjahr Abschreibung\n' +
-  'kosten kosten\n' +
-  '01.01.2024 31.12.2024 01.01.2024 31.12.2024 31.12.2024\n' +
-  'Euro Euro Euro Euro Euro Euro Euro Euro Euro Euro Euro\n';
 
 describe('numbersIn', () => {
   it('reads German amounts and ignores dates', () => {
@@ -82,58 +74,6 @@ describe('detect', () => {
     const meta = readReportMeta(extract, 'fgk-2019_extracted.json');
     expect(meta.entityName).toBe('Forschungsinstitut für Anorganische Werkstoffe -Glas/Keramik- GmbH');
     expect(meta.entitySeat).toBe('Höhr-Grenzhausen');
-  });
-});
-
-describe('anlagespiegel', () => {
-  it('solves a row with omitted zero cells', () => {
-    const roles: string[] = [
-      'cost-start', 'additions', 'disposals', 'transfers', 'cost-end',
-      'accdep-start', 'dep-expense', 'dep-disposals', 'dep-transfers', 'accdep-end',
-      'book-value',
-    ];
-    const layout = {
-      roles: roles as never,
-      groups: Array.from({ length: 11 }, () => undefined),
-      labels: Array.from({ length: 11 }, (_, i) => `c${i}`),
-    };
-    const keys = [...roles];
-    // Printed as: AHK 01.01, AHK 31.12, AfA 01.01, AfA 31.12, Buchwert (zeros omitted).
-    const solved = solveRow([55110.43, 55110.43, 55094.43, 55094.43, 16], layout, keys);
-    expect(solved).not.toBeNull();
-    expect(solved!['cost-start']).toBe(55110.43);
-    expect(solved!['cost-end']).toBe(55110.43);
-    expect(solved!['accdep-start']).toBe(55094.43);
-    expect(solved!['book-value']).toBe(16);
-    expect(solved!['additions']).toBe(0);
-  });
-
-  it('parses a schedule page into rows and columns', () => {
-    const text =
-      LAYOUT_IFOS +
-      'A.Anlagevermögen\n' +
-      'I.Immaterielle Vermögensgegenstände\n' +
-      '1.entgeltlich erworbene Konzessionen, gewerbliche 55.110,43 55.110,43 55.094,43 55.094,43 16,00\n' +
-      'Summe Immaterielle Vermögensgegenstände 55.110,43 0,00 55.110,43 55.094,43 0,00 55.094,43 16,00\n';
-    const { schedule, warnings } = parseAnlagespiegel(text, '2024', 6);
-    expect(warnings).toEqual([]);
-    expect(schedule).not.toBeNull();
-    expect(schedule!.columns).toHaveLength(11);
-    expect(schedule!.columns[0].role).toBe('cost-start');
-    const item = schedule!.rows.find((r) => /entgeltlich/.test(r.labelDe));
-    expect(item).toBeDefined();
-    expect(item!.values['2024']!['book-value']).toBe(16);
-    const total = schedule!.rows.find((r) => /^Summe Immaterielle/.test(r.labelDe));
-    expect(total!.emphasis).toBe('total');
-  });
-
-  it('finds the schedule page and not the Anhang mention', () => {
-    const pages = [
-      { page_number: 3, text: 'Die Abschreibungen ergeben sich aus dem Anlagespiegel.' },
-      { page_number: 6, text: 'ANLAGENSPIEGEL zum 31.12.2024\n' + LAYOUT_IFOS + 'Summe Anlagevermögen 1 2 3 4 5 6 7 8 9 10 11' },
-    ];
-    expect(findAnlagespiegelPage(pages)!.page_number).toBe(6);
-    expect(findAnlagespiegelPage([{ page_number: 3, text: 'Anlagespiegel siehe oben' }])).toBeNull();
   });
 });
 
@@ -627,15 +567,6 @@ describe('buildDataset', () => {
             `Summe Anlagevermögen ${de(book)} ${de(bookPrior)}\n` +
             `${de(book)} ${de(bookPrior)} ${de(book)} ${de(bookPrior)}\n`,
         },
-        {
-          page_number: 2,
-          text:
-            `ANLAGENSPIEGEL zum 31.12.${year}\n` +
-            LAYOUT_IFOS +
-            'A.Anlagevermögen\n' +
-            `1.entgeltlich erworbene Konzessionen, gewerbliche ${de(book)} ${de(bookPrior)} ${de(book)} ${de(bookPrior)} ${de(Math.round(book * 0.1))}\n` +
-            `Summe Anlagevermögen ${de(book)} ${de(bookPrior)} ${de(book)} ${de(bookPrior)} ${de(Math.round(book * 0.1))}\n`,
-        },
       ],
     };
   };
@@ -648,8 +579,6 @@ describe('buildDataset', () => {
     expect(dataset.schemaVersion).toBe('0.4');
     expect(dataset.periods.map((p) => p.id)).toEqual(['2022', '2023', '2024']);
     expect(dataset.periods[0].comparisonOnly).toBe(true);
-    expect(dataset.views.map((v) => v.id)).toContain('anlagespiegel');
-    expect(dataset.schedules?.[0].rows.length).toBeGreaterThan(0);
     const revenue = dataset.facts.find((f) => f.key === 'revenue');
     expect(revenue!.values['2024']).toBe(100);
     expect(revenue!.values['2023']).toBe(90);

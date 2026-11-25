@@ -19,7 +19,6 @@ import { DataView } from './views/DataView';
 import { reportForView, validateDataset } from './lib/validate';
 import type { Dataset, ViewMeta } from './types';
 import type { RawReport } from './analysis/types';
-import { AnlagespiegelView } from './views/AnlagespiegelView';
 import { BalanceView } from './views/BalanceView';
 import type { ViewProps } from './views/common';
 import { AnalysisView } from './views/AnalysisView';
@@ -30,7 +29,6 @@ const VIEW_COMPONENTS: Record<string, ComponentType<ViewProps>> = {
   balance: BalanceView,
   income: IncomeView,
   analysis: AnalysisView,
-  anlagespiegel: AnlagespiegelView,
   data: DataView,
 };
 

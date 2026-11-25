@@ -64,7 +64,6 @@ export const de = {
       'Tabellen und Datensätze werden einzeln übernommen – bitte nur eine davon auswählen. Berichts-Extrakte dürfen mehrere sein.',
     reading: 'Datei wird gelesen …',
     reportsFound: (n: number) => (n === 1 ? 'Bericht erkannt' : `${n} Berichte erkannt`),
-    scheduleRows: (n: number) => `${n} Zeilen Anlagespiegel`,
     truncated: 'Die Datei hat sehr viele Zeilen; nur die ersten 50.000 wurden gelesen.',
     stepMapping: 'Spalten zuordnen',
     stepPreview: 'Vorschau',
@@ -304,24 +303,6 @@ export const de = {
     exportChart: 'Diagramm als PNG herunterladen',
     exportChartHint: 'Speichert das sichtbare Zeitreihen-Diagramm als Bild.',
     exportNoChart: 'Kein Diagramm zum Speichern vorhanden.',
-  },
-
-  anlagespiegel: {
-    title: 'Anlagespiegel',
-    subtitle: 'Entwicklung der Anschaffungs- und Herstellungskosten und der Abschreibungen, Beträge in EUR',
-    groups: {
-      cost: 'Anschaffungs- und Herstellungskosten',
-      accdep: 'Abschreibungen',
-      book: 'Restbuchwerte',
-      other: 'Weitere Spalten',
-    },
-    tilesLabel: 'Kennzahlen des Anlagevermögens',
-    bookValue: 'Restbuchwert',
-    additions: 'Zugänge',
-    depExpense: 'Abschreibung des Geschäftsjahres',
-    missing: 'Für dieses Geschäftsjahr ist kein Anlagespiegel ausgewiesen.',
-    trendTitle: 'Restbuchwert der Hauptposten',
-    trendSubtitle: 'in Mio. €; die senkrechte Linie markiert das gewählte Geschäftsjahr',
   },
 
   footer: {

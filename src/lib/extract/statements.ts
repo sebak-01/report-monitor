@@ -162,7 +162,7 @@ function squashed(text: string): string {
 const AKTIVA = /A\s*K\s*T\s*I\s*V\s*A|Aktivs?e[i]?ite/i;
 const PASSIVA = /P\s*A\s*S\s*S\s*I\s*V\s*A|Passivs?e[i]?ite/i;
 
-/** The pages that carry the statements, not the Anhang or the Anlagespiegel. */
+/** The pages that carry the statements, not the Anhang. */
 export function statementPages(pages: { page_number: number; text: string }[]): {
   page_number: number;
   text: string;
